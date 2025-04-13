@@ -60,6 +60,19 @@ vocab_indexer_autogen/timestamp: \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets-release.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6QSQLiteDriverPluginAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6QSQLiteDriverPluginConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6QSQLiteDriverPluginTargets-release.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6QSQLiteDriverPluginTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlPlugins.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlTargets-release.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Sql/Qt6SqlVersionlessAliasTargets.cmake \
 	/usr/share/cmake-3.31/Modules/CMakeCXXInformation.cmake \
 	/usr/share/cmake-3.31/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
 	/usr/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake \

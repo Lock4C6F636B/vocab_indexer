@@ -4,6 +4,7 @@
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlRecord>
 #include <QDebug>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <array>
@@ -58,6 +59,8 @@ struct user{
 
 class SQLIndexer{
 private:
+    std::string file_path; //store filepath for ease of closing
+
     std::vector<element> english;
     std::vector<element> romanji;
     std::vector<element> japanese;
@@ -73,11 +76,11 @@ public:
     ~SQLIndexer() = default;
 
     bool load_SQL(const std::string filename);
-    bool write_SQL(const std::string& filename, const std::string& type);
+    bool write_SQL();
 
-    void digest_terminal_input(const std::string input);
+    void digest_terminal_input(const std::string input) noexcept;
 
-    unsigned int choose_id();
+    unsigned int choose_id() noexcept;
 
 };
 

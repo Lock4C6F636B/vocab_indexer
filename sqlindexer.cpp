@@ -1,6 +1,8 @@
 #include "sqlindexer.h"
 
 bool SQLIndexer::load_SQL(const std::string filename){
+    file_path = filename;
+
     //wipe existing vectorsoff the face of earth
     english.clear();
     romanji.clear();
@@ -8,13 +10,14 @@ bool SQLIndexer::load_SQL(const std::string filename){
     full_japanese.clear();
 
     // Set up database connection
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(QString::fromStdString(filename) ); // Replace with your actual database file path
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "vocab_connection");
+    db.setDatabaseName(QString::fromStdString(file_path));
 
+    //notify how opening went
     if (!db.open()) { //throw exception if database could not open
         qDebug() << "Error opening database:" << db.lastError().text();
         return false;
-    }
+    } else std::cout<<"opened database"<<std::endl;
 
     // Helper function to load a table into a vector
     auto loadTable = [&db](const QString& tableName, std::vector<element> &targetVector) {
@@ -40,13 +43,14 @@ bool SQLIndexer::load_SQL(const std::string filename){
     // Load each table
     bool success = loadTable("english", english) && loadTable("romanji", romanji) && loadTable("japanese", japanese) && loadTable("full_japanese", full_japanese);
 
+    std::cout<<"loading tables success"<<std::endl;
 
     db.close();
     return success;
 }
 
 
-void SQLIndexer::digest_terminal_input(const std::string input){
+void SQLIndexer::digest_terminal_input(const std::string input) noexcept {
     uint8_t arr_index = 0, current_metadata = 0;
     size_t last_terminator = 0, next_terminator = 0;
     std::array<std::string, 4> word;
@@ -120,11 +124,10 @@ void SQLIndexer::digest_terminal_input(const std::string input){
 
             last_terminator = i;
         }
-        }
-
+    }
 }
 
-unsigned int SQLIndexer::choose_id(){
+unsigned int SQLIndexer::choose_id() noexcept {
     uint8_t found_match;
     unsigned int max_id = 0;
 
@@ -157,33 +160,37 @@ unsigned int SQLIndexer::choose_id(){
             word.word_id = max_id++;
         }
     }
+
+    return 0;
 }
 
 
-bool SQLIndexer::write_SQL(const std::string& filename, const std::string& type) {
-    /*
+bool SQLIndexer::write_SQL() {
     // Set up database connection
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(QString::fromStdString(filename));
+    QSqlDatabase db = QSqlDatabase::database("vocab_connection", false);
+    if (!db.isValid()) {
+        db = QSqlDatabase::addDatabase("QSQLITE", "vocab_connection");
+        db.setDatabaseName(QString::fromStdString(file_path));
+    }
 
     if (!db.open()) {
         qDebug() << "Error opening database:" << db.lastError().text();
         return false;
-    }
+    } std::cout<<"opening database for writting success"<<std::endl;
 
     // Start transaction for better performance and atomicity
     db.transaction();
-    bool success = true;
+    bool insert_success;
 
     // Helper function to insert into a specific table
-    auto insertIntoTable = [&db, &type, &success](const QString& tableName, const user& entry, int languageIndex) {
-        if (entry.prompt[languageIndex].empty()) return; // Skip empty entries
+    auto insertIntoTable = [&db, &insert_success](const QString& tableName, const user& entry, int languageIndex) {
+        if (entry.prompt[languageIndex].empty()) return false; // Skip empty entries, though none should be empty
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) "
                                                    "VALUES (?, ?, ?, ?, ?, ?)");
         query.addBindValue(entry.word_id);
-        query.addBindValue(QString::fromStdString(type));
+        query.addBindValue(QString::fromStdString(entry.type));
         query.addBindValue(entry.type_id);
         query.addBindValue(entry.lesson);
         query.addBindValue(QString::fromStdString(entry.prompt[languageIndex]));
@@ -191,35 +198,42 @@ bool SQLIndexer::write_SQL(const std::string& filename, const std::string& type)
 
         if (!query.exec()) {
             qDebug() << "Error inserting into" << tableName << ":" << query.lastError().text();
-            success = false;
+            insert_success = false;
+            return false;
         }
+
+        insert_success = true;
     };
 
     // Process each entry
     for (const auto& entry : prompt) {
         // Insert into each table if the corresponding field is not empty
         insertIntoTable("english", entry, 0);
-        if (!success) break;
+        if(!insert_success){ //attempt insertion into english, if fail end the function
+            break;
+        }
 
         insertIntoTable("romanji", entry, 1);
-        if (!success) break;
+        if(!insert_success){
+            break;
+        }
 
         insertIntoTable("japanese", entry, 2);
-        if (!success) break;
+        if(!insert_success){ //attempt insertion into english, if fail end the function
+            break;
+        }
 
         insertIntoTable("full_japanese", entry, 3);
-        if (!success) break;
+        if(!insert_success){ //attempt insertion into english, if fail end the function
+            break;
+        }
     }
 
-    // Commit or rollback based on success
-    if (success) {
+    if(insert_success){
         db.commit();
-    } else {
-        db.rollback();
-    }
+        std::cout<<"inserting into database went well"<<std::endl;
+    }else db.rollback();
 
     db.close();
-    return success;
-*/
     return true;
 }

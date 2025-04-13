@@ -1,19 +1,26 @@
 #include <QCoreApplication>
+#include "sqlindexer.h"
 
-int main(int argc, char *argv[])
-{
-    QCoreApplication a(argc, argv);
+int main(int argc, char *argv[]){
+    // Create QCoreApplication instance
+    QCoreApplication app(argc, argv);
+    SQLIndexer sql_indexer;
 
-    // Set up code that uses the Qt event loop here.
-    // Call a.quit() or a.exit() to quit the application.
-    // A not very useful example would be including
-    // #include <QTimer>
-    // near the top of the file and calling
-    // QTimer::singleShot(5000, &a, &QCoreApplication::quit);
-    // which quits the application after 5 seconds.
+    std::cout<<"Insert file path: ";
+    std::string input;
+    std::cin>>input;
+    std::cerr<<"user input: "<<input<<" is here"<<std::endl;
+    sql_indexer.load_SQL(input);
 
-    // If you do not need a running Qt event loop, remove the call
-    // to a.exec() or use the Non-Qt Plain C++ Application template.
+    // Clear input buffer - use ignore instead of clear
+    //std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-    return a.exec();
+    std::cout<<"Insert command: ";
+    std::cin>>input;
+    sql_indexer.digest_terminal_input(input);
+    sql_indexer.choose_id();
+    sql_indexer.write_SQL();
+
+
+    return app.exec();
 }
