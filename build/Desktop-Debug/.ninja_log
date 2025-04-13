@@ -1,0 +1,13 @@
+# ninja log v6
+21	499	1744539294194464393	vocab_indexer_autogen/timestamp	4ca5e2adb3128267
+21	499	1744539294194464393	vocab_indexer_autogen/mocs_compilation.cpp	4ca5e2adb3128267
+21	499	1744539294194464393	/home/lock/programming/c++/vocab_indexer/build/Desktop-Debug/vocab_indexer_autogen/timestamp	4ca5e2adb3128267
+21	499	1744539294194464393	/home/lock/programming/c++/vocab_indexer/build/Desktop-Debug/vocab_indexer_autogen/mocs_compilation.cpp	4ca5e2adb3128267
+499	579	1744539294216464387	CMakeFiles/vocab_indexer.dir/vocab_indexer_autogen/mocs_compilation.cpp.o	e11b57bbd5626b25
+501	18353	1744539294218464387	CMakeFiles/vocab_indexer.dir/main.cpp.o	bae6238b063b50fb
+502	22202	1744539294219464386	CMakeFiles/vocab_indexer.dir/sqlindexer.cpp.o	3c29ed2aa10e6640
+10	88	1744539362283446921	vocab_indexer_autogen/timestamp	4ca5e2adb3128267
+10	88	1744539362283446921	vocab_indexer_autogen/mocs_compilation.cpp	4ca5e2adb3128267
+10	88	1744539362283446921	/home/lock/programming/c++/vocab_indexer/build/Desktop-Debug/vocab_indexer_autogen/timestamp	4ca5e2adb3128267
+10	88	1744539362283446921	/home/lock/programming/c++/vocab_indexer/build/Desktop-Debug/vocab_indexer_autogen/mocs_compilation.cpp	4ca5e2adb3128267
+88	9569	1744539362361446901	CMakeFiles/vocab_indexer.dir/sqlindexer.cpp.o	3c29ed2aa10e6640
