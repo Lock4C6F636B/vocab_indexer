@@ -78,7 +78,39 @@ public:
     bool load_SQL(const std::string filename);
     bool write_SQL();
 
-    void digest_terminal_input(const std::string input) noexcept;
+    bool digest_terminal_input(std::string &input) noexcept;
+    bool stripper(std::string &input) noexcept;
+
+    inline void show() const noexcept {
+        std::cout<<"\n"<<std::endl;
+
+        for(const user &useru : prompt){
+            for(uint8_t i = 0; i < useru.prompt.size(); i++){
+                switch(i){
+                    case 0:
+                        std::cout<<"english: ";
+                        break;
+                    case 1:
+                        std::cout<<"romanji: ";
+                        break;
+                    case 2:
+                        std::cout<<"japanese: ";
+                        break;
+                    case 3:
+                        std::cout<<"full japanese: ";
+                        break;
+                }
+                 std::cout<<useru[i]<<" meaning: "<<useru.meaning[i]<<std::endl; //print word + meaning
+            }
+
+            std::cout<<"word_id "<<useru.word_id<<std::endl;
+            std::cout<<"type_id "<<useru.type_id<<std::endl;
+            std::cout<<"type "<<useru.type<<std::endl;
+            std::cout<<"lesson "<<useru.lesson<<'\n'<<std::endl;
+        }
+
+        std::cout<<"\n";
+    }
 
     unsigned int choose_id() noexcept;
 

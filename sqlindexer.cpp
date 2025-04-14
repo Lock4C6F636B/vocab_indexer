@@ -49,8 +49,36 @@ bool SQLIndexer::load_SQL(const std::string filename){
     return success;
 }
 
+bool SQLIndexer::stripper(std::string &input) noexcept {
+    std::array<char,5> terminators = {';','|','#',',','~'};
+    for(size_t i = 0; i < input.size();){
+        if(i == 0){ //ignore first member, so checking for i-1 doesn't go out of bounds
+            i++;
+            continue;
+        }
+        else if(i == input.size()-1){ //ensure last character i+1 doesn't reach out of bounds
+            std::cerr<<"command not ended with ~ terminator... bad input, continue on your own risk"<<std::endl;
+            return false;
+        }
+        else if(((input[i] == ' ') || (input[i] == '\n') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
+            input.erase(i, 1); //erase current whitespace
+        }
+        else i++; //upon erasing on currnet index... the indexes shift to lower (i+1 == current i)... hence need to increment conditionally
+    }
 
-void SQLIndexer::digest_terminal_input(const std::string input) noexcept {
+    std::cout<<'\n'<<'\n'<<input<<'\n'<<std::endl; //just debug
+
+    return true;
+}
+
+bool SQLIndexer::digest_terminal_input(std::string &input) noexcept {
+    if (input.empty() || input.back() != '~') {
+        std::cerr << "Command not ended with ~ terminator... bad input, continue at your own risk" << std::endl;
+        return false;
+    }
+
+    stripper(input); //better for function to call stripper by itself
+
     uint8_t arr_index = 0, current_metadata = 0;
     size_t last_terminator = 0, next_terminator = 0;
     std::array<std::string, 4> word;
@@ -125,6 +153,8 @@ void SQLIndexer::digest_terminal_input(const std::string input) noexcept {
             last_terminator = i;
         }
     }
+
+    return true;
 }
 
 unsigned int SQLIndexer::choose_id() noexcept {
@@ -180,7 +210,9 @@ bool SQLIndexer::write_SQL() {
 
     // Start transaction for better performance and atomicity
     db.transaction();
-    bool insert_success;
+    bool insert_success = true;
+
+    std::cerr<<"passed transaction"<<std::endl;
 
     // Helper function to insert into a specific table
     auto insertIntoTable = [&db, &insert_success](const QString& tableName, const user& entry, int languageIndex) {
@@ -235,5 +267,6 @@ bool SQLIndexer::write_SQL() {
     }else db.rollback();
 
     db.close();
+    std::cout<<"closed database"<<std::endl;
     return true;
 }
