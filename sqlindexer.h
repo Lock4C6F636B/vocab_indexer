@@ -5,6 +5,7 @@
 #include <QtSql/QSqlRecord>
 #include <QDebug>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <array>
@@ -78,8 +79,10 @@ public:
     bool load_SQL(const std::string filename);
     bool write_SQL();
 
-    bool digest_terminal_input(std::string &input) noexcept;
-    bool stripper(std::string &input) noexcept;
+    bool digest_input(std::string &input) noexcept;
+    void stripper(std::string &input) noexcept;
+
+    bool process() noexcept;
 
     inline void show() const noexcept {
         std::cout<<"\n"<<std::endl;

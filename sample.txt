@@ -1,0 +1,2 @@
+cat;neko;ねこ;猫|ネコ|ねこ #1,noun,25~
+sleep;neru;ねる;寝る #5,verb,17~

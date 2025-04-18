@@ -49,16 +49,80 @@ bool SQLIndexer::load_SQL(const std::string filename){
     return success;
 }
 
-bool SQLIndexer::stripper(std::string &input) noexcept {
+bool SQLIndexer::process() noexcept{
+    std::cout<<"Insert file path: ";
+    std::string filepath;
+    std::cin>>filepath;
+    std::cerr<<"user input: "<<filepath<<" is here"<<std::endl;
+    while(!load_SQL(filepath)){
+        std::cout<<"Insert file again: ";
+        std::cin>>filepath;
+    }
+
+    // Clear input buffer - use ignore instead of clear
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::string prompt;
+
+
+    std::cout<<"want to user file/terminal [y/n]: ";
+    char terminal_file;
+    std::cin>>terminal_file;
+    while(terminal_file != 'y' && terminal_file != 'Y' && terminal_file != 'n' && terminal_file != 'N'){
+        std::cout<<"you shall not pass: ";
+        std::cin>>terminal_file;
+    }
+
+    if(terminal_file == 'y' or terminal_file == 'Y'){
+        std::cout << "Enter the prompt of filepath: ";
+        std::getline(std::cin, filepath);
+        //clear input buffer - use ignore instead of clear
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        std::ifstream prompt_file(filepath);
+        while(!prompt_file) {
+            std::cout << "try again: ";
+            std::getline(std::cin, filepath);
+        }
+
+        std::string line;
+        while (std::getline(prompt_file, line)) {
+            if (!line.empty()){
+                prompt += line;
+            }
+        }
+
+        prompt_file.close();
+    }
+    else {
+        std::cout<<"Insert command: ";
+        std::getline(std::cin, prompt);
+    }
+
+
+    if(digest_input(prompt)){
+        choose_id();
+        show();
+        write_SQL();
+    }
+
+
+    return true;
+}
+
+void SQLIndexer::stripper(std::string &input) noexcept {
     std::array<char,5> terminators = {';','|','#',',','~'};
     for(size_t i = 0; i < input.size();){
         if(i == 0){ //ignore first member, so checking for i-1 doesn't go out of bounds
-            i++;
-            continue;
+            if(std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()){
+                input.erase(i,1); //remove next to last character
+                continue;
+            } else i++;
         }
         else if(i == input.size()-1){ //ensure last character i+1 doesn't reach out of bounds
-            std::cerr<<"command not ended with ~ terminator... bad input, continue on your own risk"<<std::endl;
-            return false;
+            if(std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()){
+                input.erase(i,1); //remove next to last character
+                continue;
+            } else i++; //or i can do break
         }
         else if(((input[i] == ' ') || (input[i] == '\n') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
             input.erase(i, 1); //erase current whitespace
@@ -68,16 +132,17 @@ bool SQLIndexer::stripper(std::string &input) noexcept {
 
     std::cout<<'\n'<<'\n'<<input<<'\n'<<std::endl; //just debug
 
-    return true;
+    return;
 }
 
-bool SQLIndexer::digest_terminal_input(std::string &input) noexcept {
+bool SQLIndexer::digest_input(std::string &input) noexcept {
     if (input.empty() || input.back() != '~') {
-        std::cerr << "Command not ended with ~ terminator... bad input, continue at your own risk" << std::endl;
+        std::cerr << "Command not ended with ~ terminator... bad input, you shall not pass" << std::endl;
         return false;
     }
 
     stripper(input); //better for function to call stripper by itself
+    std::cout<<"input command is: "<<input<<" ,last character is "<<input[input.size()-1]<<std::endl; //debug after stripper
 
     uint8_t arr_index = 0, current_metadata = 0;
     size_t last_terminator = 0, next_terminator = 0;
