@@ -155,7 +155,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
     for(size_t i = 0; i < input.size();i++){
         if(input[i] == '~'){
             lines.emplace_back(input.substr(0,i+1));
-            input = input.substr(i,input.size());
+            input = input.substr(i+1);
         }
     }
 
@@ -177,7 +177,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
     unsigned int lesson;
 
     for(std::string &line : lines){
-    for(size_t i = 0; i < line.size() - 1; i++ ){
+    for(size_t i = 0; i < line.size(); i++ ){
         if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
             if(index == 0){ //first word of command must always be pushed in
                 words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
