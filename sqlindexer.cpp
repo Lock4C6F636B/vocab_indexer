@@ -50,9 +50,10 @@ bool SQLIndexer::load_SQL(const std::string filename){
 }
 
 bool SQLIndexer::process() noexcept{
-    std::cout<<"Insert file path: ";
+    std::cout<<"Insert database filepath: ";
     std::string filepath;
-    std::cin>>filepath;
+    filepath = "/home/lock/programming/c++/HiKa_linux/sql/vocabulary.db";
+    //std::cin>>filepath;
     std::cerr<<"user input: "<<filepath<<" is here"<<std::endl;
     while(!load_SQL(filepath)){
         std::cout<<"Insert file again: ";
@@ -72,11 +73,16 @@ bool SQLIndexer::process() noexcept{
         std::cin>>terminal_file;
     }
 
+    //clear input buffer - use ignore instead of clear
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
-        std::getline(std::cin, filepath);
-        //clear input buffer - use ignore instead of clear
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        filepath = "/home/lock/programming/c++/vocab_indexer/sample.txt";
+        //std::getline(std::cin, filepath);
+
+
+        std::cerr<<"here is what is input into prompt filepath: "<<filepath<<std::endl;
 
         std::ifstream prompt_file(filepath);
         while(!prompt_file) {
@@ -102,7 +108,7 @@ bool SQLIndexer::process() noexcept{
     if(digest_input(prompt)){
         choose_id();
         show();
-        write_SQL();
+       //write_SQL();
     }
 
 
@@ -142,75 +148,103 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
     }
 
     stripper(input); //better for function to call stripper by itself
-    std::cout<<"input command is: "<<input<<" ,last character is "<<input[input.size()-1]<<std::endl; //debug after stripper
+    std::cout<<"stripped input command is: "<<input<<std::endl; //debug after stripper
 
-    uint8_t arr_index = 0, current_metadata = 0;
+    //cut input into separate lines
+    std::vector<std::string> lines;
+    for(size_t i = 0; i < input.size();i++){
+        if(input[i] == '~'){
+            lines.emplace_back(input.substr(0,i+1));
+            input = input.substr(i,input.size());
+        }
+    }
+
+    for(auto item: lines){
+        std::cout<<"here is line: "<<item<<std::endl;
+    }
+
+    //set variables for digesting input
+    std::array<char,5> terminators = {';','|','#',',','~'};
+    //uint8_t current_index = 0, current_metadata = 0;
     size_t last_terminator = 0, next_terminator = 0;
-    std::array<std::string, 4> word;
-    std::array<std::string, 4> word_copy;
+    //bool copy_used = false;
+    size_t index = 0;  // Reset language index (0=english, 1=romanji, etc.) and metadata, 0-3 + 3 (type,type_id,lesson)
 
-    for(size_t i = 0; i < input.size() - 1; i++ ){
-        if(input[i] == '|' || input[i] == ';' || input[i] == '~'){ //firstly find terminator
-            if(arr_index == 0){ //first word of command must always be pushed in
-                word[arr_index] = input.substr(last_terminator, i-last_terminator); //take current word
+    // Temporary storage for current word parts
+    std::array<std::vector<std::string>, 4> words;
+    uint8_t type_id;
+    std::string type;
+    unsigned int lesson;
+
+    for(std::string &line : lines){
+    for(size_t i = 0; i < line.size() - 1; i++ ){
+        if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
+            if(index == 0){ //first word of command must always be pushed in
+                words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
+                //std::cout<<"here is first word: "<<words[index][words.size()-1]<<std::endl; //debug
             }
 
-            switch(input[i]){
+            //handle individul terminator cases
+            switch(line[i]){
             case '|': {
-                next_terminator = input.find_first_of(";|~\n", i+1); //find next terminator to determine length
-                word_copy = word; //take already existing words
-                word_copy[arr_index] = input.substr(i+1,next_terminator-i); //store next word in copy
+                next_terminator = line.find_first_of(";|#~\n", i+1); //find next terminator to determine length
+                words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word in on same index
 
                 last_terminator = i; //save position of current terminator
+
+                //std::cout<<"here is copy(|) word: "<<words[index][words.size()-1]<<std::endl; //debug
                 break;
             }
             case ';': {
-                next_terminator = input.find_first_of(";|~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
-                word[arr_index] = input.substr(i+1,next_terminator-i); //store next word
-
-                bool copy_used = std::all_of(word_copy.begin(), word_copy.end(),[](const std::string& s) { return s.empty(); }); //check if word_copy is used in this cycle
-                if(copy_used){
-                    word_copy[arr_index] = input.substr(i+1,next_terminator-i); //if copy is initialized, need to store in copy as well
-                }
+                index++; //increment to new
+                next_terminator = line.find_first_of(";|#~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
+                words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word
 
                 last_terminator = i; //save position of current terminator
+
+                //std::cout<<"here is next (;) word: "<<words[index][words.size()-1]<<next_terminator<<std::endl;
                 break;
             }
             case '#': { //indicates ending words and start of metadata
-                prompt.push_back(user(word));
-
-                bool copy_used = std::all_of(word_copy.begin(), word_copy.end(),[](const std::string& s) { return s.empty(); }); //check if word_copy is used in this cycle
-                if(copy_used){ //
-                    prompt.push_back(user(word_copy));
-                }
-
                 last_terminator = i; //save position of current terminator
                 break;
             }
             case ',':{ //separator of metadata
+                index++;
                 //can consider data belong to latest word
-                switch(current_metadata){
-                case 0:
-                    prompt[prompt.size()-1].type_id = std::stoi(input.substr(last_terminator, i-last_terminator));
+                std::cout<<"metadata: "<<line.substr(last_terminator+1, i-last_terminator-1)<<" ,index is:"<<index<<std::endl;
+                switch(index){
+                case 4:
+                    type_id = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
                     break;
-                case 1:
-                    prompt[prompt.size()-1].type = input.substr(last_terminator, i-last_terminator);
+                case 5:
+                    type = line.substr(last_terminator+1, i-last_terminator-1);
                     break;
-                case 2:
-                    prompt[prompt.size()-1].lesson = std::stoi(input.substr(last_terminator, i-last_terminator));
-                    break;
+                default:
+                    std::cout<<"you're not supposed to be here"<<std::endl;
                 }
 
-                current_metadata++;
                 last_terminator = i; //save position of current terminator
                 break;
             }
             case '~':{ //end of line terminator
-                //reset values indicating current index
-                current_metadata = 0;
+                //need to resolve lesson metadata here
+                lesson = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
+                std::cout<<"metadata: "<<line.substr(last_terminator+1, i-last_terminator-1)<<" ,index is:"<<index<<std::endl;
 
-                arr_index = 0; //reset index
-                word_copy = {}; //reset copy
+                for (size_t i0 = 0; i0 < words[0].size(); i0++) {
+                    for (size_t i1 = 0; i1 < words[1].size(); i1++) {
+                        for (size_t i2 = 0; i2 < words[2].size(); i2++) {
+                            for (size_t i3 = 0; i3 < words[3].size(); i3++) {
+                                prompt.emplace_back(user(std::array<std::string, 4>{words[0][i0], words[1][i1], words[2][i2], words[3][i3]},type_id, type, lesson));
+                            }
+                        }
+                    }
+                }
+                //reset values indicating current index
+                index = 0; //reset index
+                words = {}; //reset copy
+                return true;
             }
             default: continue; //ignore if not terminator
             }
@@ -218,6 +252,8 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
             last_terminator = i;
         }
     }
+    }
+
 
     return true;
 }

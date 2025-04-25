@@ -38,6 +38,16 @@ struct user{
         prompt = words;
     }
 
+    // Constructor from array of strings and metadata
+    user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int & Lesson): type_id(Type_Id), type(Type), lesson(Lesson){
+        prompt = words;
+    }
+
+    // Constructor for a single word with index and metadata
+    user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int & Lesson,int index): type_id(Type_Id), type(Type), lesson(Lesson) {
+        prompt = words;
+    }
+
     void assign_mean(uint8_t language, unsigned int current_mean){ //increment existing meaning
         meaning[language] = current_mean++;
     }
@@ -85,7 +95,7 @@ public:
     bool process() noexcept;
 
     inline void show() const noexcept {
-        std::cout<<"\n"<<std::endl;
+        std::cout<<"starting show: \n"<<std::endl;
 
         for(const user &useru : prompt){
             for(uint8_t i = 0; i < useru.prompt.size(); i++){
