@@ -117,7 +117,7 @@ public:
             }
 
             std::cout<<"word_id: "<<useru.word_id<<std::endl;
-            std::cout<<"type_id: "<<useru.type_id<<std::endl;
+            std::cout<<"type_id: "<< static_cast<int>(useru.type_id) << std::endl;
             std::cout<<"type: "<<useru.type<<std::endl;
             std::cout<<"lesson: "<<useru.lesson<<'\n'<<std::endl;
         }

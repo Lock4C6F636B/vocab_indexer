@@ -174,7 +174,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 
         // Temporary storage for current word parts
         std::array<std::vector<std::string>, 4> words;
-        uint8_t type_id;
+        uint8_t type_ID;
         std::string type;
         unsigned int lesson;
 
@@ -182,7 +182,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
                 if(index == 0){ //first word of command must always be pushed in
                     words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
-                    //std::cout<<"here is first word: "<<words[index][words.size()-1]<<std::endl; //debug
                 }
 
                 //handle individul terminator cases
@@ -192,8 +191,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word in on same index
 
                     last_terminator = i; //save position of current terminator
-
-                    //std::cout<<"here is copy(|) word: "<<words[index][words.size()-1]<<std::endl; //debug
                     break;
                 }
                 case ';': {
@@ -202,8 +199,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word
 
                     last_terminator = i; //save position of current terminator
-
-                    //std::cout<<"here is next (;) word: "<<words[index][words.size()-1]<<next_terminator<<std::endl;
                     break;
                 }
                 case '#': { //indicates ending words and start of metadata
@@ -212,11 +207,12 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case ',':{ //separator of metadata
                     index++;
-                    //can consider data belong to latest word
-                    std::cout<<"metadata: "<<line.substr(last_terminator+1, i-last_terminator-1)<<" ,index is:"<<index<<std::endl;
                     switch(index){
                     case 4:
-                        type_id = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
+                        std::cout<<"metadata: |"<<line.substr(last_terminator+1, i-last_terminator-1)<<"| ,index is:"<<index<<std::endl;
+                        type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
+                        std::cout<<"type id: "<<type_ID<<std::endl;
+                        std::cout<<"metadata after type id: |"<<line.substr(last_terminator+1, i-last_terminator-1)<<"| ,index is:"<<index<<std::endl;
                         break;
                     case 5:
                         type = line.substr(last_terminator+1, i-last_terminator-1);
@@ -233,11 +229,13 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     lesson = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
                     std::cout<<"metadata: "<<line.substr(last_terminator+1, i-last_terminator-1)<<" ,index is:"<<index<<std::endl;
 
+                    std::cout<<"type id in ~: "<<type_ID<<std::endl;
+
                     for (size_t i0 = 0; i0 < words[0].size(); i0++) {
                         for (size_t i1 = 0; i1 < words[1].size(); i1++) {
                             for (size_t i2 = 0; i2 < words[2].size(); i2++) {
                                 for (size_t i3 = 0; i3 < words[3].size(); i3++) {
-                                    prompt.emplace_back(user(std::array<std::string, 4>{words[0][i0], words[1][i1], words[2][i2], words[3][i3]},type_id, type, lesson));
+                                    prompt.emplace_back(user(std::array<std::string, 4>{words[0][i0], words[1][i1], words[2][i2], words[3][i3]},type_ID, type, lesson));
                                 }
                             }
                         }
