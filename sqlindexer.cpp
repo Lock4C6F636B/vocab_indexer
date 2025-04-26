@@ -108,7 +108,20 @@ bool SQLIndexer::process() noexcept{
     if(digest_input(prompt)){
         choose_id();
         show();
-       //write_SQL();
+
+        char decision;
+        do {
+            std::cout<<"do you want to insert these into table? [y/n]: ";
+            std::cin>>decision;
+
+            if(decision == 'y'){
+                write_SQL();
+            }
+            else if(decision == 'n'){
+                return true;
+            }
+            else std::cout<<"\try again [y/n]: ";
+        } while(decision != 'y' && decision !='n');
     }
 
 
@@ -160,10 +173,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         }
     }
 
-    for(auto item: lines){
-        std::cout<<"here is line: "<<item<<std::endl;
-    }
-
     //set variables for digesting input
     std::array<char,5> terminators = {';','|','#',',','~'};
 
@@ -209,10 +218,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     index++;
                     switch(index){
                     case 4:
-                        std::cout<<"metadata: |"<<line.substr(last_terminator+1, i-last_terminator-1)<<"| ,index is:"<<index<<std::endl;
                         type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
-                        std::cout<<"type id: "<<type_ID<<std::endl;
-                        std::cout<<"metadata after type id: |"<<line.substr(last_terminator+1, i-last_terminator-1)<<"| ,index is:"<<index<<std::endl;
                         break;
                     case 5:
                         type = line.substr(last_terminator+1, i-last_terminator-1);
@@ -227,9 +233,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 case '~':{ //end of line terminator
                     //need to resolve lesson metadata here
                     lesson = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
-                    std::cout<<"metadata: "<<line.substr(last_terminator+1, i-last_terminator-1)<<" ,index is:"<<index<<std::endl;
-
-                    std::cout<<"type id in ~: "<<type_ID<<std::endl;
 
                     for (size_t i0 = 0; i0 < words[0].size(); i0++) {
                         for (size_t i1 = 0; i1 < words[1].size(); i1++) {
@@ -401,19 +404,83 @@ bool SQLIndexer::write_SQL() {
 
     std::cerr<<"passed transaction"<<std::endl;
 
+    auto is_redundant = [this](const user& entry, const uint8_t languageIndex, const size_t &currentIndex) -> bool {
+        for(size_t itr = 0; itr < currentIndex; itr++) {
+            if(entry[languageIndex] == prompt[itr][languageIndex]) {
+                std::cout << "Redundant in prompt: word=" << entry[languageIndex]<<", current index "<<currentIndex<< std::endl;
+                return true;
+            }
+        }
+
+        switch(languageIndex){
+        case 0:
+            for(const element &e : english){
+                if(entry[languageIndex] == e.word){
+                    return true;
+                }
+            }
+            break;
+
+        case 1:
+            for(const element &e : romanji){
+                if(entry[languageIndex] == e.word){
+                    return true;
+                }
+            }
+            break;
+
+        case 2:
+            for(const element &e : japanese){
+                if(entry[languageIndex] == e.word){
+                    return true;
+                }
+            }
+            break;
+
+        case 3:
+            for(const element &e : full_japanese){
+                if(entry[languageIndex] == e.word){
+                    return true;
+                }
+            }
+            break;
+
+        default:
+            std::cout<<"not langague index in is_redundant() lambda"<<std::endl;
+        }
+
+        return false;
+    };
+
     // Helper function to insert into a specific table
-    auto insertIntoTable = [&db, &insert_success](const QString& tableName, const user& entry, int languageIndex) {
+    auto insertIntoTable = [&db, &insert_success](const QString& tableName, const user& entry, const int languageIndex) {
         if (entry.prompt[languageIndex].empty()) return false; // Skip empty entries, though none should be empty
 
+        // After preparing the query but before executing it:
+        std::cout << "Attempting to insert into " << tableName.toStdString()
+                  << " word_id: " << entry.word_id
+                  << " type: " << entry.type
+                  << " type: " << static_cast<int>(entry.type_id)
+                  << " word: " << entry.prompt[languageIndex]
+                  << " meaning: " << static_cast<int>(entry.meaning[languageIndex]) << std::endl;
+
         QSqlQuery query(db);
-        query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) "
-                                                   "VALUES (?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
+
+        std::cout<<"insertion commencing";
+
         query.addBindValue(entry.word_id);
+        std::cout<<", inserting word_id";
         query.addBindValue(QString::fromStdString(entry.type));
+        std::cout<<", inserting type";
         query.addBindValue(entry.type_id);
+        std::cout<<", inserting type_id";
         query.addBindValue(entry.lesson);
+        std::cout<<", inserting lesson";
         query.addBindValue(QString::fromStdString(entry.prompt[languageIndex]));
+        std::cout<<", inserting word";
         query.addBindValue(entry.meaning[languageIndex]);
+        std::cout<<", inserting meaning"<<std::endl;
 
         if (!query.exec()) {
             qDebug() << "Error inserting into" << tableName << ":" << query.lastError().text();
@@ -421,34 +488,50 @@ bool SQLIndexer::write_SQL() {
             return false;
         }
 
+        std::cout<<"| insertion success"<<std::endl;
         insert_success = true;
     };
 
     // Process each entry
-    for (const auto& entry : prompt) {
+    for (size_t i = 0; i < prompt.size(); ++i) {
         // Insert into each table if the corresponding field is not empty
-        insertIntoTable("english", entry, 0);
-        if(!insert_success){ //attempt insertion into english, if fail end the function
-            break;
+        std::cout<<"word: "<<prompt[i][0]<<". "<<prompt[i][1]<<", "<<prompt[i][2]<<", "<<prompt[i][3]<<std::endl;
+        if(!is_redundant(prompt[i],prompt[i].meaning[0],i)){ //insert only if the word not already included in table
+            std::cout<<"redundant is not true for english"<<" ,current index is "<<i<<std::endl;
+            //insertIntoTable("english", prompt[i], 0);
+            //std::cout<<"insertion went through"<<std::endl;
+            if(!insert_success){ //attempt insertion into english, if fail end the function
+                break;
+            }
         }
 
-        insertIntoTable("romanji", entry, 1);
-        if(!insert_success){
-            break;
+        if(!is_redundant(prompt[i],prompt[i].meaning[1],i)){ //insert only if the word not already included in table
+            std::cout<<"redundant is not true for romanji"<<" ,current index is "<<i<<std::endl;
+            //insertIntoTable("romanji", prompt[i], 1);
+            if(!insert_success){
+                break;
+            }
         }
 
-        insertIntoTable("japanese", entry, 2);
-        if(!insert_success){ //attempt insertion into english, if fail end the function
-            break;
+        if(!is_redundant(prompt[i],prompt[i].meaning[2],i)){ //insert only if the word not already included in table
+            std::cout<<"redundant is not true for japanese"<<" ,current index is "<<i<<std::endl;
+            //insertIntoTable("japanese", prompt[i], 2);
+            if(!insert_success){ //attempt insertion into english, if fail end the function
+                break;
+            }
         }
 
-        insertIntoTable("full_japanese", entry, 3);
-        if(!insert_success){ //attempt insertion into english, if fail end the function
-            break;
+        if(!is_redundant(prompt[i],prompt[i].meaning[3],i)){ //insert only if the word not already included in table
+            std::cout<<"redundant is not true for full japanese"<<" ,current index is "<<i<<std::endl;
+            //insertIntoTable("full_japanese", prompt[i], 3);
+            if(!insert_success){ //attempt insertion into english, if fail end the function
+                break;
+            }
         }
     }
 
     if(insert_success){
+        std::cout<<" | committing"<<std::endl;
         db.commit();
         std::cout<<"inserting into database went well"<<std::endl;
     }else db.rollback();
