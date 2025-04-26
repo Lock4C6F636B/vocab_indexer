@@ -255,7 +255,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 }
 
 unsigned int SQLIndexer::choose_id() noexcept {
-    uint8_t found_match;
+    uint8_t found_match = false;
     unsigned int max_id = 0;
 
     //find max word_id in existance
@@ -265,26 +265,116 @@ unsigned int SQLIndexer::choose_id() noexcept {
     for (const auto& e : full_japanese) max_id = std::max(max_id, e.word_id);
 
 
-    auto find_match= [this](const std::vector<element> &table, const uint8_t language) -> bool{ //find if and where word occures
+    auto find_match_in_table= [this](const std::vector<element> &table, const uint8_t language) -> bool{ //find if and where word occures
         for(const element e : table){
             for(user &word : prompt){
                 if(word[language] == e.word){
                     word.word_id = e.word_id; //assign found id
-                    word.assign_mean(language, e.meaning); //increment meaning for this table and assign
                     return true;
                 }
             }
         }
 
-        return false; //overflow is going to be considered "no match found"
+        return false;
+    };
+
+    auto assign_mean_in_table = [this](user &line){ //find if and where word occures
+            uint8_t high_mean = 0;
+            for(const element e: english){ //find highest meaning
+                if(line.word_id == e.word_id && high_mean < e.meaning){
+                        high_mean = e.meaning;
+                }
+            }
+            line.meaning[0] = ++high_mean; //assign new highest meaning to
+
+            high_mean = 0; //reset high mean
+            for(const element e: romanji){ //find highest meaning
+                if(line.word_id == e.word_id && high_mean < e.meaning){
+                        high_mean = e.meaning;
+                }
+            }
+            line.meaning[1] = ++high_mean; //assign new highest meaning to
+
+            high_mean = 0; //reset high mean
+            for(const element e: japanese){ //find highest meaning
+                if(line.word_id == e.word_id && high_mean < e.meaning){
+                        high_mean = e.meaning;
+                }
+            }
+            line.meaning[2] = ++high_mean; //assign new highest meaning to
+
+            high_mean = 0; //reset high mean
+            for(const element e: full_japanese){ //find highest meaning
+                if(line.word_id == e.word_id && high_mean < e.meaning){
+                        high_mean = e.meaning;
+                }
+            }
+            line.meaning[3] = ++high_mean; //assign new highest meaning to
     };
 
 
-    for(user &word : prompt) {
-        found_match = find_match(english,0) | find_match(romanji,1) | find_match(japanese,2) | find_match(full_japanese,3);
+    auto find_match_in_prompt = [this](size_t &index) -> bool{
+        for(size_t itr = 0; itr < index; itr++) {
+            if((prompt[itr].word_id != -1) && (prompt[itr][0] == prompt[index][0]) || (prompt[itr][1] == prompt[index][1]) || (prompt[itr][2] == prompt[index][2]) || (prompt[itr][3] == prompt[index][3])){ //check if one at least one INITIALIZED word in prompt before current index appear
+                prompt[index].word_id = prompt[itr].word_id; //take word_id from matching object before
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto assign_mean_in_prompt = [this](user &line){
+        uint8_t high_mean = 0;
+        for(const user &word : prompt){ //search through english part of prompt
+            if(line.word_id == word.word_id && high_mean < word.meaning[0]){ //
+                high_mean = word.meaning[0];
+            }
+        }
+        line.meaning[0] = ++high_mean; //assign new highest mean
+        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
+
+        high_mean = 0;
+        for(const user &word : prompt){ //search through romanji part of prompt
+            if(line.word_id == word.word_id && high_mean < word.meaning[1]){ //
+                high_mean = word.meaning[1];
+            }
+        }
+        line.meaning[1] = ++high_mean; //assign new highest mean
+        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[1])<<std::endl;
+
+        high_mean = 0;
+        for(const user &word : prompt){ //search through japanese part of prompt
+            if(line.word_id == word.word_id && high_mean < word.meaning[2]){ //
+                high_mean = word.meaning[2];
+            }
+        }
+        line.meaning[2] = ++high_mean; //assign new highest mean
+        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
+
+        high_mean = 0;
+        for(const user &word : prompt){ //search through romanji part of prompt
+            if(line.word_id == word.word_id && high_mean < word.meaning[3]){ //
+                high_mean = word.meaning[3];
+            }
+        }
+        line.meaning[3] = ++high_mean; //assign new highest mean
+        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
+    };
+
+    for(size_t i = 0; i < prompt.size(); i++) {
+        //find match in prompt
+        found_match = find_match_in_prompt(i);
+        if(found_match){std::cout<<" hello hello ";assign_mean_in_prompt(prompt[i]);}
+
+        //find match in table, skip in match found in prompt
+        if(!found_match){
+            found_match = find_match_in_table(english,0) | find_match_in_table(romanji,1) | find_match_in_table(japanese,2) | find_match_in_table(full_japanese,3);
+            if(found_match){ assign_mean_in_table(prompt[i]); } //assign meaning if match found in table
+        }
 
         if(!found_match){ //if word not found, assign new max_id
-            word.word_id = max_id++;
+            prompt[i].word_id = max_id++;
+            prompt[i].meaning = {0,0,0,0}; //set all meaning to 0 for new words
         }
     }
 

@@ -21,7 +21,7 @@ struct element {
 struct user{
     std::array<std::string,4> prompt; //here user inputs one string for english, one for romanji and so on...
     std::array<uint8_t, 4> meaning = {0,0,0,0}; //meaning is not universal... preset for one meaning
-    unsigned int word_id;
+    unsigned int word_id = -1; //oveflow means object is not properly initiliazed (value is not set correctly)
     uint8_t type_id;
     std::string type;
     unsigned int lesson;
@@ -46,10 +46,6 @@ struct user{
     // Constructor for a single word with index and metadata
     user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int & Lesson,int index): type_id(Type_Id), type(Type), lesson(Lesson) {
         prompt = words;
-    }
-
-    void assign_mean(uint8_t language, unsigned int current_mean){ //increment existing meaning
-        meaning[language] = current_mean++;
     }
 
     uint8_t get_mean(uint8_t language){ //returning meaning in this language
@@ -113,7 +109,7 @@ public:
                         std::cout<<"full japanese: ";
                         break;
                 }
-                 std::cout<<useru[i]<<" meaning: "<<useru.meaning[i]<<std::endl; //print word + meaning
+                 std::cout<<useru[i]<<" meaning: "<< static_cast<int>(useru.meaning[i])<<std::endl; //print word + meaning
             }
 
             std::cout<<"word_id: "<<useru.word_id<<std::endl;
