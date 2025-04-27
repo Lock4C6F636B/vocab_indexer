@@ -334,7 +334,6 @@ unsigned int SQLIndexer::choose_id() noexcept {
             }
         }
         line.meaning[0] = ++high_mean; //assign new highest mean
-        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
 
         high_mean = 0;
         for(const user &word : prompt){ //search through romanji part of prompt
@@ -343,7 +342,6 @@ unsigned int SQLIndexer::choose_id() noexcept {
             }
         }
         line.meaning[1] = ++high_mean; //assign new highest mean
-        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[1])<<std::endl;
 
         high_mean = 0;
         for(const user &word : prompt){ //search through japanese part of prompt
@@ -352,7 +350,6 @@ unsigned int SQLIndexer::choose_id() noexcept {
             }
         }
         line.meaning[2] = ++high_mean; //assign new highest mean
-        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
 
         high_mean = 0;
         for(const user &word : prompt){ //search through romanji part of prompt
@@ -361,7 +358,6 @@ unsigned int SQLIndexer::choose_id() noexcept {
             }
         }
         line.meaning[3] = ++high_mean; //assign new highest mean
-        std::cout<<"high is is here: "<<static_cast<int>(high_mean)<<" , line.mean is here "<<static_cast<int>(line.meaning[0])<<std::endl;
     };
 
     for(size_t i = 0; i < prompt.size(); i++) {
@@ -407,7 +403,6 @@ bool SQLIndexer::write_SQL() {
     auto is_redundant = [this](const user& entry, const uint8_t languageIndex, const size_t &currentIndex) -> bool {
         for(size_t itr = 0; itr < currentIndex; itr++) {
             if(entry[languageIndex] == prompt[itr][languageIndex]) {
-                std::cout << "Redundant in prompt: word=" << entry[languageIndex]<<", current index "<<currentIndex<< std::endl;
                 return true;
             }
         }
@@ -496,34 +491,30 @@ bool SQLIndexer::write_SQL() {
     for (size_t i = 0; i < prompt.size(); ++i) {
         // Insert into each table if the corresponding field is not empty
         std::cout<<"word: "<<prompt[i][0]<<". "<<prompt[i][1]<<", "<<prompt[i][2]<<", "<<prompt[i][3]<<std::endl;
-        if(!is_redundant(prompt[i],prompt[i].meaning[0],i)){ //insert only if the word not already included in table
-            std::cout<<"redundant is not true for english"<<" ,current index is "<<i<<std::endl;
-            //insertIntoTable("english", prompt[i], 0);
-            //std::cout<<"insertion went through"<<std::endl;
+        if(!is_redundant(prompt[i],0,i)){ //insert only if the word not already included in table
+            insertIntoTable("english", prompt[i], 0);
+            std::cout<<"insertion went through"<<std::endl;
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],prompt[i].meaning[1],i)){ //insert only if the word not already included in table
-            std::cout<<"redundant is not true for romanji"<<" ,current index is "<<i<<std::endl;
-            //insertIntoTable("romanji", prompt[i], 1);
+        if(!is_redundant(prompt[i],1,i)){ //insert only if the word not already included in table
+            insertIntoTable("romanji", prompt[i], 1);
             if(!insert_success){
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],prompt[i].meaning[2],i)){ //insert only if the word not already included in table
-            std::cout<<"redundant is not true for japanese"<<" ,current index is "<<i<<std::endl;
-            //insertIntoTable("japanese", prompt[i], 2);
+        if(!is_redundant(prompt[i],2,i)){ //insert only if the word not already included in table
+            insertIntoTable("japanese", prompt[i], 2);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],prompt[i].meaning[3],i)){ //insert only if the word not already included in table
-            std::cout<<"redundant is not true for full japanese"<<" ,current index is "<<i<<std::endl;
-            //insertIntoTable("full_japanese", prompt[i], 3);
+        if(!is_redundant(prompt[i],3,i)){ //insert only if the word not already included in table
+            insertIntoTable("full_japanese", prompt[i], 3);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
