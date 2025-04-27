@@ -398,8 +398,6 @@ bool SQLIndexer::write_SQL() {
     db.transaction();
     bool insert_success = true;
 
-    std::cerr<<"passed transaction"<<std::endl;
-
     auto is_redundant = [this](const user& entry, const uint8_t languageIndex, const size_t &currentIndex) -> bool {
         for(size_t itr = 0; itr < currentIndex; itr++) {
             if(entry[languageIndex] == prompt[itr][languageIndex]) {
@@ -461,60 +459,49 @@ bool SQLIndexer::write_SQL() {
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
-
-        std::cout<<"insertion commencing";
+        std::cout<<"INSERT INTO " + tableName.toStdString() + "(word_id, type, type_id, lesson, word, meaning) VALUES ("<<entry.word_id<<","<<entry.type<<","<<static_cast<int>(entry.type_id)<<","<<entry.lesson<<","<<entry.prompt[languageIndex]<<","<<static_cast<int>(entry.meaning[languageIndex])<<")"<<std::endl;
 
         query.addBindValue(entry.word_id);
-        std::cout<<", inserting word_id";
         query.addBindValue(QString::fromStdString(entry.type));
-        std::cout<<", inserting type";
         query.addBindValue(entry.type_id);
-        std::cout<<", inserting type_id";
         query.addBindValue(entry.lesson);
-        std::cout<<", inserting lesson";
         query.addBindValue(QString::fromStdString(entry.prompt[languageIndex]));
-        std::cout<<", inserting word";
         query.addBindValue(entry.meaning[languageIndex]);
-        std::cout<<", inserting meaning"<<std::endl;
 
         if (!query.exec()) {
             qDebug() << "Error inserting into" << tableName << ":" << query.lastError().text();
-            insert_success = false;
             return false;
         }
 
-        std::cout<<"| insertion success"<<std::endl;
-        insert_success = true;
+        return true;
     };
 
     // Process each entry
     for (size_t i = 0; i < prompt.size(); ++i) {
         // Insert into each table if the corresponding field is not empty
-        std::cout<<"word: "<<prompt[i][0]<<". "<<prompt[i][1]<<", "<<prompt[i][2]<<", "<<prompt[i][3]<<std::endl;
         if(!is_redundant(prompt[i],0,i)){ //insert only if the word not already included in table
-            insertIntoTable("english", prompt[i], 0);
-            std::cout<<"insertion went through"<<std::endl;
+            insert_success = insertIntoTable("english", prompt[i], 0);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
         if(!is_redundant(prompt[i],1,i)){ //insert only if the word not already included in table
-            insertIntoTable("romanji", prompt[i], 1);
+            insert_success = insertIntoTable("romanji", prompt[i], 1);
             if(!insert_success){
                 break;
             }
         }
 
         if(!is_redundant(prompt[i],2,i)){ //insert only if the word not already included in table
-            insertIntoTable("japanese", prompt[i], 2);
+            insert_success = insertIntoTable("japanese", prompt[i], 2);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
         if(!is_redundant(prompt[i],3,i)){ //insert only if the word not already included in table
-            insertIntoTable("full_japanese", prompt[i], 3);
+            insert_success = insertIntoTable("full_japanese", prompt[i], 3);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
@@ -522,7 +509,6 @@ bool SQLIndexer::write_SQL() {
     }
 
     if(insert_success){
-        std::cout<<" | committing"<<std::endl;
         db.commit();
         std::cout<<"inserting into database went well"<<std::endl;
     }else db.rollback();

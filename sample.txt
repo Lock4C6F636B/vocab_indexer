@@ -1,2 +1,12 @@
-cat;neko;ねこ;猫|ネコ|ねこ #1,noun,25~
-sleep;neru;ねる;寝る #5,verb,17~
+cat;neko;ねこ;猫|ネコ|ねこ #2,adjective,26~
+sleep;neru;ねる;寝る #5,verb,18~
+vegetarian;bejitarian;べじたりあん|ベジタリアン;ベジタリアン #1,noun,5~
+waitress;weitoresu;うぇいとれす|ウェイトレス;ウェイトレス #1,noun,5~
+salmon;saamon;さあもん|サーモン;サーモン #1,noun,5~
+sleep;neru;ねる;寝る #1,noun,18~
+bird|fowl;tori;とり;鳥 #1,noun,5~
+chicken meat;toriniku;とりにく;鶏肉 #1,noun,5~
+bean|peas;mame;まめ;豆 #1,noun,5~
+toast|cheers;kampai;かんぱい;乾杯 #0,mixed,6~
+beer;biiru;びいる|ビール;ビール #1,noun,5~
+building;biru;びる;ビル #1,noun,8~
