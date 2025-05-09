@@ -90,6 +90,8 @@ public:
 
     bool process() noexcept;
 
+    unsigned int choose_id() noexcept;
+
     inline void show() const noexcept {
         std::cout<<"starting show: \n"<<std::endl;
 
@@ -120,8 +122,5 @@ public:
 
         std::cout<<"\n";
     }
-
-    unsigned int choose_id() noexcept;
-
 };
 

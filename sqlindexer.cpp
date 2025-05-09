@@ -52,7 +52,7 @@ bool SQLIndexer::load_SQL(const std::string filename){
 bool SQLIndexer::process() noexcept{
     std::cout<<"Insert database filepath: ";
     std::string filepath;
-    filepath = "/home/lock/programming/c++/HiKa_linux/sql/vocabulary.db";
+    filepath = "/home/kasumi/programming/c++/HiKa_linux/sql/vocabulary.db";
     //std::cin>>filepath;
     std::cerr<<"user input: "<<filepath<<" is here"<<std::endl;
     while(!load_SQL(filepath)){
@@ -78,11 +78,8 @@ bool SQLIndexer::process() noexcept{
 
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
-        filepath = "/home/lock/programming/c++/vocab_indexer/sample.txt";
+        filepath = "/home/kasumi/programming/c++/vocab_indexer/sample.txt";
         //std::getline(std::cin, filepath);
-
-
-        std::cerr<<"here is what is input into prompt filepath: "<<filepath<<std::endl;
 
         std::ifstream prompt_file(filepath);
         while(!prompt_file) {
@@ -93,7 +90,7 @@ bool SQLIndexer::process() noexcept{
         std::string line;
         while (std::getline(prompt_file, line)) {
             if (!line.empty()){
-                prompt += line;
+                prompt += line + '\n'; //keep new line to check for comments
             }
         }
 
@@ -103,6 +100,7 @@ bool SQLIndexer::process() noexcept{
         std::cout<<"Insert command: ";
         std::getline(std::cin, prompt);
     }
+
 
 
     if(digest_input(prompt)){
@@ -129,24 +127,39 @@ bool SQLIndexer::process() noexcept{
 }
 
 void SQLIndexer::stripper(std::string &input) noexcept {
+    size_t comment_start_i = -1; //overflow means it's not initialized
     std::array<char,5> terminators = {';','|','#',',','~'};
     for(size_t i = 0; i < input.size();){
-        if(i == 0){ //ignore first member, so checking for i-1 doesn't go out of bounds
-            if(std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()){
-                input.erase(i,1); //remove next to last character
-                continue;
-            } else i++;
+        if(input[i] == '/' && (i != input.size()-1) && input[i+1] == '/'){ //(i != input.size()-1) prevents checking i+1 out of bounds in case where last line is /
+            comment_start_i = i;
         }
-        else if(i == input.size()-1){ //ensure last character i+1 doesn't reach out of bounds
-            if(std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()){
-                input.erase(i,1); //remove next to last character
-                continue;
-            } else i++; //or i can do break
+
+        if(comment_start_i != -1){
+            if(input[i] == '\n' || i == input.size()-1){ //cut comment ad the end of line or end of file
+                input.erase(comment_start_i,i-comment_start_i); //cut of comment line
+                i = comment_start_i; //index must actually be synchronized to new size, otherwise out of bounds
+                comment_start_i = -1; //reset value to not used
+            }
+            else i++; //ignore until end of the line
         }
-        else if(((input[i] == ' ') || (input[i] == '\n') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
-            input.erase(i, 1); //erase current whitespace
+        else{
+            if(i == 0){ //ignore first member, so checking for i-1 doesn't go out of bounds
+                if(std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()){
+                    input.erase(i,1); //remove next to last character
+                    continue;
+                } else i++;
+            }
+            else if(i == input.size()-1){ //ensure last character i+1 doesn't reach out of bounds
+                if(std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()){
+                    input.erase(i,1); //remove next to last character
+                    continue;
+                } else i++; //or i can do break
+            }
+            else if(((input[i] == ' ') || (input[i] == '\n') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
+                input.erase(i, 1); //erase current whitespace
+            }
+            else i++; //upon erasing on currnet index... the indexes shift to lower (i+1 == current i)... hence need to increment conditionally
         }
-        else i++; //upon erasing on currnet index... the indexes shift to lower (i+1 == current i)... hence need to increment conditionally
     }
 
     std::cout<<'\n'<<'\n'<<input<<'\n'<<std::endl; //just debug
@@ -155,13 +168,12 @@ void SQLIndexer::stripper(std::string &input) noexcept {
 }
 
 bool SQLIndexer::digest_input(std::string &input) noexcept {
-    if (input.empty() || input.back() != '~') {
+    if (input.empty()) {
         std::cerr << "Command not ended with ~ terminator... bad input, you shall not pass" << std::endl;
         return false;
     }
 
     stripper(input); //better for function to call stripper by itself
-    std::cout<<"stripped input command is: "<<input<<std::endl; //debug after stripper
 
     //cut input into separate lines
     std::vector<std::string> lines;
@@ -189,7 +201,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 
         for(size_t i = 0; i < line.size(); i++ ){
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
-                if(index == 0){ //first word of command must always be pushed in
+                if(index == 0 && last_terminator == 0){ //first word of command must always be pushed in
                     words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
                 }
 
@@ -267,14 +279,16 @@ unsigned int SQLIndexer::choose_id() noexcept {
     for (const auto& e : japanese) max_id = std::max(max_id, e.word_id);
     for (const auto& e : full_japanese) max_id = std::max(max_id, e.word_id);
 
+    if(max_id == -1){ //leave if overflow of max_id
+        std::cerr<<"max_id is overflow"<<std::endl;
+        return 1; //
+    }
 
-    auto find_match_in_table= [this](const std::vector<element> &table, const uint8_t language) -> bool{ //find if and where word occures
+    auto find_match_in_table= [this](const std::vector<element> &table, const uint8_t language, const unsigned int &word_index) -> bool{ //find if and where word occures
         for(const element e : table){
-            for(user &word : prompt){
-                if(word[language] == e.word){
-                    word.word_id = e.word_id; //assign found id
+                if(prompt[word_index].prompt[language] == e.word){ //if the searched word of prompt is in table
+                    prompt[word_index].word_id = e.word_id; //assign found id
                     return true;
-                }
             }
         }
 
@@ -316,7 +330,7 @@ unsigned int SQLIndexer::choose_id() noexcept {
     };
 
 
-    auto find_match_in_prompt = [this](size_t &index) -> bool{
+    auto find_match_in_prompt = [this](size_t &index) -> bool{ //check if the word is already included in before current index
         for(size_t itr = 0; itr < index; itr++) {
             if((prompt[itr].word_id != -1) && (prompt[itr][0] == prompt[index][0]) || (prompt[itr][1] == prompt[index][1]) || (prompt[itr][2] == prompt[index][2]) || (prompt[itr][3] == prompt[index][3])){ //check if one at least one INITIALIZED word in prompt before current index appear
                 prompt[index].word_id = prompt[itr].word_id; //take word_id from matching object before
@@ -344,7 +358,7 @@ unsigned int SQLIndexer::choose_id() noexcept {
         line.meaning[1] = ++high_mean; //assign new highest mean
 
         high_mean = 0;
-        for(const user &word : prompt){ //search through japanese part of prompt
+        for(const user &word : prompt){ //search through j std::cout<<"found match for word_id "<<word.word_id<<std::endl;apanese part of prompt
             if(line.word_id == word.word_id && high_mean < word.meaning[2]){ //
                 high_mean = word.meaning[2];
             }
@@ -363,11 +377,11 @@ unsigned int SQLIndexer::choose_id() noexcept {
     for(size_t i = 0; i < prompt.size(); i++) {
         //find match in prompt
         found_match = find_match_in_prompt(i);
-        if(found_match){std::cout<<" hello hello ";assign_mean_in_prompt(prompt[i]);}
+        if(found_match){assign_mean_in_prompt(prompt[i]);}
 
         //find match in table, skip in match found in prompt
         if(!found_match){
-            found_match = find_match_in_table(english,0) | find_match_in_table(romanji,1) | find_match_in_table(japanese,2) | find_match_in_table(full_japanese,3);
+            found_match = find_match_in_table(english,0,i) | find_match_in_table(romanji,1,i) | find_match_in_table(japanese,2,i) | find_match_in_table(full_japanese,3,i);
             if(found_match){ assign_mean_in_table(prompt[i]); } //assign meaning if match found in table
         }
 
