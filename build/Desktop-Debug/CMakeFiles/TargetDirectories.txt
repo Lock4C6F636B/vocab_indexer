@@ -1,0 +1,9 @@
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/vocab_indexer.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/edit_cache.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/rebuild_cache.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/list_install_components.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/install.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/install/local.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/install/strip.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/vocab_indexer_autogen_timestamp_deps.dir
+/home/kasumi/programming/c++/vocab_indexer/build/Desktop-Debug/CMakeFiles/vocab_indexer_autogen.dir

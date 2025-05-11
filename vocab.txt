@@ -1,0 +1,263 @@
+hello;konnichi wa;こんにちは;こんにちは#0,mixed,1~
+morning;ohayou;おはよう;おはよう#0,mixed,1~
+evening;konban wa;こんばんは;こんばんは#0,mixed,1~
+nice to meet you;hajimemashite;はじめまして;はじめまして#0,mixed,1~
+pleasure to meet you;yoroshiku onegai shimasu;よろしくおねがいします;よろしくお願いします#0,mixed,1~
+pleased to meet you;douzo yoroshiku;どうぞよろしく;どうぞよろしく#0,mixed,1~
+
+thank you;arigatou gozaimasu;ありがとうございます;ありがとうございます#0,mixed,2~
+thanks;doumo;どうも;どうも#0,mixed,2~
+you're welcome|you are welcome;dou itashimashite;どういたしまして;どういたしまして#0,mixed,2~
+please|pretty please;onegai shimasu;おねがいします;お願いします#0,mixed,2~
+please;kudasai;ください;下さい #0,mixed,2~
+
+sorry|excuse me;sumimasen;すみません|ごめ|ごめなさい;すみません|ごめ|ごめなさい#0,mixed,3~
+yes;hai;はい;はい#0,mixed,3~
+no;iie;いいえ;いいえ#0,mixed,3~
+um;ano;あの;あの#0,mixed,3~
+okay|alright;daijoubu;だいじょうぶ;大丈夫#0,mixed,3~
+
+long time no see;hisashiburi;ひさしぶり;久しぶり#0,mixed,6~
+here you go|go ahead;douzo;どうぞ;どうぞ#0,mixed,6~
+i will receive;itadakimasu;いただきます;いただきます#0,mixed,6~
+toast|cheers;kampai;かんぱい;乾杯 #0,mixed,6~
+let's see;etto;えっと;えっと#0,mixed,6~
+oh;uwa;うわ;ウワ#0,mixed,6~
+
+peekaboo;inaiinaibaa;いないいないばあ;いないいないばあ#0,mixed,7~
+
+am;gozen;ごぜん;午前#0,mixed,12~
+pm;gogo;ごご;午後#0,mixed,12~
+
+do you know;shitte imasu ka|shitte masu ka|shitte;しっていますか|しってますか|しって;知っていますか|知ってますか|知って#0,mixed,13~
+
+well then|so;ja|dewa;じゃ|でわ;じゃ|でわ#0,mixed,18~
+
+I'm going out|I'm leaving|I'm leaving now;ittekimasu;いってきます;行ってきます#0,mixed,19~
+have safe trip|come back safely;itterasshai;いってらっしゃい;行ってらっしゃい#0,mixed,19~
+
+
+
+small gift|souvenir;omiyage;おみやげ;お土産#1,noun,2~
+
+foot|leg;ashi;あし;足#1,noun,3~
+
+customer|guest;okyakusan;おきゃくさん;御客さん|お客さん#1,noun,4~
+menu;menyuu;めにゅう|メニュウ;メニュウ#1,noun,4~
+order;chuumon;ちゅうもん;注文#1,noun,4~
+check|bill;okaikei;おかいけい;お会計#1,noun,4~
+shop assistant;tenin;てんいん;店員 #1,noun,4~
+
+food;tabemono;たべもの;食べ物#1,noun,5~
+meal;shokuji;しょくじ;食事#1,noun,5~
+fish;sakana;さかな;魚#1,noun,5~
+salmon;saamon;さあもん|サーモン;サーモン #1,noun,5~
+vegetable;yasai;やさい;野菜#1,noun,5~
+bean|peas;mame;まめ;豆 #1,noun,5~
+meat;niku;にく;肉#1,noun,5~
+pork;butaniku;ぶたにく;豚肉#1,noun,5~
+beef;ushiniku;うしにく;牛肉#1,noun,5~
+chicken;chikin|toriniku;ちきん|チキン|とりにく;チキン|鶏肉#1,noun,5~
+fried chicken;furaido chikin;ふらいどちきん|フライドチキン#1,noun,5~
+meat loaf;mitorofu;みとろふ|ミトロフ;ミトロフ#1,noun,5~
+candy;okashi;おかし;お菓子#1,noun,5~
+alcohol;osake;おさけ;お酒#1,noun,5~
+green tea;ocha;おちゃ;お茶#1,noun,5~
+cooking|cuisine;ryouri;りょうり;料理#1,noun,5~
+restaurant;resutoran;れすとらん|レストラン;レストラン#1,noun,5~
+bread;pan;ぱん;パン#1,noun,5~
+drive-thru;doraibusuruu;どらいぶするう|ドライブスルウ;ドライブスルウ#1,noun,5~
+belly|stomach;onaka;おなか;お腹#1,noun,5~
+allergy;arerugii;あれるぎい|アレルギー;アレルギー#1,noun,5~
+vegetarian;bejitarian;べじたりあん|ベジタリアン;ベジタリアン #1,noun,5~
+glass;gurasu;ぐらす|グラス;グラス#1,noun,5~
+beer;biiru;びいる|ビール;ビール #1,noun,5~
+waitress;weitoresu;うぇいとれす|ウェイトレス;ウェイトレス #1,noun,5~
+
+mister|miss;san;さん;さん#1,noun,6~
+everyone;minasan|mina;みなさん|みな#1,noun,6~
+friend;tomodachi;ともだち;友達#1,noun,6~
+car;kuruma;くるま;車#1,noun,6~
+house;ie;いえ;家#1,noun,6~
+plane;hikouki;ひこうき;飛行機#1,noun,6~
+
+family;kazoku;かぞく;家族#1,noun,7~
+album|arubamu;あるばむ|アルバム;アルバム#1,noun,7~
+younger sister;imouto;いもうと;妹#1,noun,7~
+younger brother;otouto;おとうと;弟#1,noun,7~
+older sister;ane;あね;姉#1,noun,7~
+older brother;ani;あに;兄#1,noun,7~
+father|dad|daddy|papa;otousan|chichi|papa;おとうさん|ちち|ぱぱ;お父さん|父|パパ#1,noun,7~
+mother|mom|mommy|mama;okaasan|haha|mama;おかあさん|はは|まま;お母さん|母|ママ#1,noun,7~
+child;kodomo;こども;子供#1,noun,7~
+baby;akachan;あかちゃん;赤ちゃん#1,noun,7~
+
+toilet;toire;といれ|トイレ;トイレ#1,noun,8~
+trashbin;gomibako;ごみばこ;ゴミ箱#1,noun,8~
+bus;basu;ばす|バス;バス#1,noun,8~
+bank;ginkou;ぎんこう;銀行#1,noun,8~
+store;mise;みせ;店#1,noun,8~
+convinience store;konbini;こんびに|コンビニ;コンビニ#1,noun,8~
+shop;shoppu;しょっぷ|ショップ;ショップ #1,noun,8~
+train station;eki;えき;えき#1,noun,8~
+building;biru;びる;ビル #1,noun,8~
+
+left;hidari;ひだり;左#1,noun,9~
+right;migi;みぎ;右#1,noun,9~
+above|up;ue;うえ;上#1,noun,9~
+bellow|under|down;shita;下#1,noun,9~
+in front of|in front|front;mae;まえ;前#1,noun,9~
+behind;ushiro;うしろ;後#1,noun,9~
+between|gap|space;aida;あいだ;間#1,noun,9~
+near;chikaku;ちかく;近く#1,noun,9~
+inside;naka;なか;中#1,noun,9~
+
+summer;natsu;なつ;夏#1,noun,10~
+autumn;aki;あき;秋#1,noun,10~
+winter;fuyu;ふゆ;冬#1,noun,10~
+spring;haru;はる;春#1,noun,10~
+snow;yuki;ゆき;雪#1,noun,10~
+
+yen;en;えん;円#1,noun,11~
+hour;ji;じ;時#1,noun,11~
+half;han;はん;半#1,noun,11~
+minute;pun;ぷん;分#1,noun,11~
+
+today;kyou;きょう;今日#1,noun,12~
+yesterday;kinou;きのう;昨日#1,noun,12~
+tomorrow;ashita;あした;明日#1,noun,12~
+monday;getsu-youbi|getsu youbi;げつようび;月曜日#1,noun,12~
+tuesday;ka-youbi|ka youbi;かようび;火曜日#1,noun,12~
+wednesday;sui-youbi|sui youbi;すいようび;水曜日#1,noun,12~
+thursday;moku-youbi|moku youbi;もくようび;木曜日#1,noun,12~
+friday;kin-youbi|kin youbi;金曜日#1,noun,12~
+saturday;do-youbi|do youbi;どようび;土曜日#1,noun,12~
+sunday;nichi-youbi|nichi youbi;にちようび;日曜日#1,noun,12~
+dusk;yuugata;ゆうがた;夕方#1,noun,12~
+night;yoru;よる;夜#1,noun,12~
+month;getsu;げつ;月#1,noun,12~
+next month;rai getsu;らいげつ;来月#1,noun,12~
+
+room;heya;へや;部屋#1,noun,13~
+laundry|washing;sentaku;せんたく;選択#1,noun,13~
+hometown;shuushin;しゅうしん;就寝 #1,noun,13~
+occupation;shokugyou;しょくぎょう;職業 #1,noun,13~
+
+male|boy|man;otoko;おとこ;男#1,noun,14~
+female|girl|woman;onna;おんな;女#1,noun,14~
+human|person;hito;ひと;人#1,noun,14~
+japanese;nihonjin|nihongo;にほんじん|にほんご;日本人|日本語#1,noun,14~
+name;onamae|namae;おなまえ|なまえ;お名前|なまえ #1,noun,14~
+nationality;kokuseki;こくせき;国籍 #1,noun,14~
+
+cinema;eigakan;えいがかん;映画館#1,noun,15~
+pool;puuru;ぷうる|プール;プール#1,noun,15~
+picnic;pikunikku;ぴくにっく|ピクニック;ピクニック#1,noun,15~
+study;benkyou;べんきょう;勉強#1,noun,15~
+
+glasses;megane;めがね;眼鏡|メガネ#1,noun,17~
+hat;boushi;ぼうし;帽子#1,noun,17~
+pocket;poketto;ぽけっと|ポケット;ポケット#1,noun,17~
+
+marriage;kekkon;けっこん;結婚#1,noun,18~
+life;jinsei;じんせい;人生#1,noun,18~
+lifestyle;seikatsu;せいかつ;生活#1,noun,18~
+
+knife;naifu;ないふ|ナイフ;ナイフ#1,noun,19~
+bath;ofuro;おふろ;お風呂#1,noun,19~
+table;teeburu;てえぶる|テーブル;テーブル#1,noun,19~
+window;mado;まど;窓#1,noun,19~
+desk;tsukue;つくえ;机#1,noun,19~
+chair;isu;いす;椅子#1,noun,19~
+tv;terebi;てれび|テレビ;テレビ#1,noun,19~
+
+doctor;isha;いしゃ;医者#1,noun,20~
+cold|illness;kaze;かぜ;風邪 #1,noun,20~
+medicine;kusuri;くすり;薬 #1,noun,20~
+
+test;tesuto;てすと|テスト;テスト#1,noun,21~
+question;mondai;もんだい;問題#1,noun,21~
+english;eigo;えいご;英語#1,noun,21~
+teacher;sensei;せんせい;先生#1,noun,21~
+
+company|corporation;kaisha;かいしゃ;会社 #1,noun,22~
+
+plan;yotei;よてい;予定#1,noun,23~
+
+age|old;sai;さい;才#1,noun,24~
+
+animal;doubutsu;どうぶつ|動物#1,noun,25~
+cat;neko;ねこ;猫|ネコ|ねこ#1,noun,25~
+dog;inu;いぬ;犬|イヌ|いぬ#1,noun,25~
+elephant;zou;ぞう;像#1,noun,25~
+gorilla;gorira;ごりら|ゴリラ;ゴリラ#1,noun,25~
+lion;raion;らいおん|ライオン;ライオン#1,noun,25~
+cow;ushi;うし;牛#1,noun,25~
+baby;akachan;あかちゃん;赤ちゃん#1,noun,25~
+
+personal computer|computer;pasokon|kompyuuta|kompyutaa;ぱそこん|こんぴゅうた|こんぴゅたあ|パソコン|コンピュータ|コンピュター;パソコン|コンピュータ|コンピュター#1,noun,27~
+magic;maho;まほ;魔法#1,noun,27~
+linux;rinakkusu;りなっくす|リナックス;リナックス#1,noun,27~
+password;pasuwaado;ぱすふあど|パスフード;パスフード #1,noun,27~
+
+sun;nichi;にち;日#1,noun,28~
+fire;hi;ひ;火#1,noun,28~
+water;mizu;みず;水#1,noun,28~
+moon;tsuki;つき;月#1,noun,28~
+spirit|mind|soul;ki|tamashii;き|たましい;気|魂#1,noun,28~
+
+fear;kyoufu;きょうふ;恐怖#1,noun,29~
+vengeance;fukushuu;ふくしゅう;復讐#1,noun,29~
+honor;meiyo;めいよ;名誉#1,noun,29~
+dishonor;fumeiyo;ふめいよ;不名誉#1,noun,29~
+
+talon|nail;tsume;つめ;爪#1,noun,29~
+jorougumo;jorougumo;じょろうぐも;絡新婦#1,noun,29~
+
+
+
+delicious|tasty|appetizing;oishii;おいしい;美味しい#2,adjective,5~
+not delicious|not tasty|unappetizing|gross;mazui;まずい;不味い#2,adjective,5~
+spicy;karai;からい;辛い#2,adjective,5~
+
+amazing|great;sugoi;すごい;凄い#2,adjective,6~
+funny|interesting;omoshiroi;おもしろい;面白い#2,adjective,6~
+really|truly;hontou ni;ほんとうに;本当に
+
+big;ookii;おおきい;大きい#2,adjective,7~
+small;chiisai;ちいさい;小さい#2,adjective,7~
+cute|adorable;kawaii;かわいい;可愛い#2,adjective,7~
+young;wakai;わかい;若い#2,adjective,7~
+
+distant|faraway;tooi;とおい;遠い#2,adjective,8~
+
+hot;atsui;あつい;暑い#2,adjective,10~
+cold;samui|tsumetai;さむい|つめたい;寒い|冷たい#2,adjective,10~
+humid;mushiatsui;むしあつい;蒸し暑い#2,adjective,10~
+wet|damp;nureta;ぬれた;濡れた#2,adjective,10~
+soaked|drenched;bisshori;びっしょり;びっしょり#2,adjective,10~
+
+tired;tsukareta;つかれた;疲れた#2,adjective,14~
+wonderful;subarashii;すばらしい;素晴らしい#2,adjective,14~
+clever|smart;kashikoi;かしこい;賢い#2,adjective,14~
+friendly;shitashii;したしい;親しい#2,adjective,14~
+colorful;karafuru;からふる|カラフル;カラフル#2,adjective,14~
+calm;ochitsutai;おちつたい;落ち伝い#2,adjective,14~
+lively;genki;げんき;元気#2,adjective,14~
+cool|sway|fashionable|excellent;iketeru;いけてる;イケてる#2,adjective,14~
+strong;tsuyoi;つよい;強い#2,adjective,14~
+loud|noisy|annoying;urusai;うるさい;煩い#2,adjective,14~
+
+difficult|hard;muzukashii;むずかしい;難しい#2,adjective,15~
+
+dirty;kitanai;きたない;汚い#2,adjective,17~
+
+
+
+I;watashi|boku;わたし|ぼく;私|僕#3,pronoun,1~
+
+which;dore;どれ;どれ#3,pronoun,5~
+
+this;kore;これ;これ#3,pronoun,5~
+that;sore|are;それ|あれ;それ|あれ#3,pronoun,5~
+

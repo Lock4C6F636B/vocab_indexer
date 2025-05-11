@@ -26,6 +26,11 @@ struct user{
     std::string type;
     unsigned int lesson;
 
+    //optional data... good to include
+    std::string en_usage, jp_usage;
+    std::vector<std::string> en_commentary, jp_commentary; //for both english and japanese, english first
+    std::string en_audio_path, jp_audio_path;
+
     user() = default;
 
     // Constructor from array of strings

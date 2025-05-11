@@ -1,0 +1,1 @@
+/usr/bin/g++ -DQT_QML_DEBUG -g -Wl,--dependency-file=CMakeFiles/vocab_indexer.dir/link.d CMakeFiles/vocab_indexer.dir/vocab_indexer_autogen/mocs_compilation.cpp.o CMakeFiles/vocab_indexer.dir/main.cpp.o CMakeFiles/vocab_indexer.dir/sqlindexer.cpp.o -o vocab_indexer  /usr/lib/libQt6Sql.so.6.9.0 /usr/lib/libQt6Core.so.6.9.0
