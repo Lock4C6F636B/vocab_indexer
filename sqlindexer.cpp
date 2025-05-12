@@ -128,7 +128,7 @@ bool SQLIndexer::process() noexcept{
 
 void SQLIndexer::stripper(std::string &input) noexcept {
     size_t comment_start_i = -1; //overflow means it's not initialized
-    std::array<char,5> terminators = {';','|','#',',','~'};
+    std::array<char,10> terminators = {';','|','#',',','~','@','<','>',':','$'};
     for(size_t i = 0; i < input.size();){
         if(input[i] == '/' && (i != input.size()-1) && input[i+1] == '/'){ //(i != input.size()-1) prevents checking i+1 out of bounds in case where last line is /
             comment_start_i = i;
@@ -185,6 +185,10 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         }
     }
 
+    for(auto line:lines){
+        std::cout<<line<<std::endl;
+    }
+
     //set variables for digesting input
     std::array<char,8> terminators = {';','|','#',',','~','@','<','$'};
 
@@ -208,46 +212,25 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 //handle individul terminator cases
                 switch(line[i]){
                 case '|': {
-                    next_terminator = line.find_first_of(";|#~\n", i+1); //find next terminator to determine length
-                    words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word in on same index
+                    next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+                    words[index].push_back(line.substr(i+1,next_terminator-1 - i)); //store next word in on same index
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
+                    std::cout<<"| index:"<<index<<" word i push"<<line.substr(i+1,next_terminator-1 - i)<<std::endl;
                     break;
                 }
                 case ';': {
                     index++; //increment to new
-                    next_terminator = line.find_first_of(";|#~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
-                    words[index].push_back(line.substr(i+1,next_terminator-i-1)); //store next word
+                    next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
+                    words[index].push_back(line.substr(i+1,next_terminator-1 -i)); //store next word
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
+                    std::cout<<";, index:"<<index<<" word i push"<<line.substr(i+1,next_terminator-1 - i)<<std::endl;
                     break;
                 }
                 case '#': { //indicates ending words and start of metadata
-                    last_terminator = i; //save position of current terminator
-                    break;
-                }
-                case ',':{ //separator of metadata
-                    index++;
-                    switch(index){
-                    case 4:
-                        type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
-                        break;
-                    case 5:
-                        type = line.substr(last_terminator+1, i-last_terminator-1);
-                        break;
-                    default:
-                        std::cout<<"you're not supposed to be here"<<std::endl;
-                    }
-
-                    last_terminator = i; //save position of current terminator
-                    break;
-                }
-                case '~':{ //end of line terminator
-                    //need to resolve lesson metadata here
-                    lesson = std::stoi(line.substr(last_terminator+1, i-last_terminator-1));
-
                     for (size_t i0 = 0; i0 < words[0].size(); i0++) {
                         for (size_t i1 = 0; i1 < words[1].size(); i1++) {
                             for (size_t i2 = 0; i2 < words[2].size(); i2++) {
@@ -257,10 +240,38 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             }
                         }
                     }
+
+                    last_terminator = i; //save position of current terminator
+                    std::cout<<"#, index:"<<index<<std::endl;
+                    break;
+                }
+                case ',':{ //separator of metadata
+                    index++;
+                    switch(index){
+                    case 4:
+                        type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1)); //load type_id
+                        break;
+                    case 5:
+                        type = line.substr(last_terminator+1, i-last_terminator-1); //load type
+
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator for lesson data
+                        std::cout<<line.substr(i+1,next_terminator-1 -i); //debug
+                        lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
+                        break;
+                    default:
+                        std::cerr<<words[0][0]<<" "<<index<<" "<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
+                        std::cout<<"you're not supposed to be here"<<std::endl;
+                    }
+                    std::cout<<", index:"<<index<<" word i push"<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
+
+                    last_terminator = i; //save position of current terminator
+                    break;
                 }
                 case '@':{
                     if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of("@<$\n", i+1); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+
+                        std::cout<<"next terminator "<<static_cast<int>(next_terminator)<<std::endl;
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
@@ -276,11 +287,16 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
                         }
                     }
+
+                    std::cout<<"@ index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<" "<<i<<std::endl;
+
                     i = next_terminator -1; //land on next terminator in next loop, saves time
+                    std::cout<<"current i: "<<i<<" ,next terminator"<<next_terminator<<std::endl;
+                    break;
                 }
                 case '<':{
                     if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of("@<$\n", i+1); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
@@ -296,20 +312,45 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
                         }
                     }
+
+                    std::cout<<"< index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<std::endl;
+
                     i = next_terminator -1; //land on next terminator in next loop, saves time
+                    break;
                 }
                 case '$':{
+                    if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+
+                        if (next_terminator == std::string::npos) { //if no terminator found, use end of line
+                            next_terminator = line.length();
+                        }
+
+                        if(input.substr(i+1, 3) == "en$"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].en_audio_path =  line.substr(i+3,next_terminator-i+2);
+                        }
+                        else if(input.substr(i+1, 3) == "jp$"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].jp_audio_path =  line.substr(i+3,next_terminator-i+2);
+                        }
+                        else{
+                            std::cerr<<"this is not correct usage syntax"<<std::endl;
+                        }
+                    }
+
+                    std::cout<<"$ index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<std::endl;
+
+                    i = next_terminator -1; //land on next terminator in next loop, saves time
+                    break;
+                }
+                case '~':{ //end of line terminator
+                    break;
+                }
+                default: continue; //ignore if not terminator\
 
                 }
-                default: continue; //ignore if not terminator
-
-                }
-
-                last_terminator = i;
             }
         }
     }
-
 
     return true;
 }

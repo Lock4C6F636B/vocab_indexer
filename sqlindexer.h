@@ -69,6 +69,8 @@ struct user{
 };
 
 
+static constexpr std::array<std::string_view,9> types{"mixed","noun","adjective","pronoun","number","verb","adverb","preposition","conjuction"};
+
 class SQLIndexer{
 private:
     std::string file_path; //store filepath for ease of closing
