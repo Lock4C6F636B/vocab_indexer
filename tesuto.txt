@@ -1,0 +1,19 @@
+ // Basic examples - just words with type, type_id, and lesson
+apple;ringo;りんご;林檎 #1,noun,5~
+blue;aoi;あおい;青い #2,adjective,7~
+
+// Examples with pipe-separated alternatives
+cat|kitty;neko;ねこ;猫|ネコ #1,noun,6~
+hello|hi;konnichiwa|ya;こんにちは|や;今日は|や #0,mixed,1~
+
+// Example with basic extended metadata
+dog;inu;いぬ;犬 #1,noun,6 @en:Dogs are common pets. @jp:犬はよく飼われているペットです。~
+
+// Example with commentary
+water;mizu;みず;水 #1,noun,3 <en>Essential for life <en>H2O formula <jp>命に欠かせない~
+
+// Example with audio paths
+thank you;arigatou;ありがとう;有難う #0,mixed,2 $en$/path/to/english.mp3 $jp$/path/to/japanese.mp3~
+
+// Full example with all types of metadata
+study;benkyou;べんきょう;勉強 #5,verb,9 @en:I study Japanese every day. @jp:毎日日本語を勉強します。 <en>Requires dedication <en>Regular practice helps <jp>毎日続けることが大切 $en$/audio/en/study.mp3 $jp$/audio/jp/benkyou.mp3~

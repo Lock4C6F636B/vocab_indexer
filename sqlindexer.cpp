@@ -78,7 +78,7 @@ bool SQLIndexer::process() noexcept{
 
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
-        filepath = "/home/kasumi/programming/c++/vocab_indexer/sample.txt";
+        filepath = "/home/kasumi/programming/c++/vocab_indexer/tesuto.txt";
         //std::getline(std::cin, filepath);
 
         std::ifstream prompt_file(filepath);
@@ -217,7 +217,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
-                    std::cout<<"| index:"<<index<<" word i push"<<line.substr(i+1,next_terminator-1 - i)<<std::endl;
                     break;
                 }
                 case ';': {
@@ -227,7 +226,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
-                    std::cout<<";, index:"<<index<<" word i push"<<line.substr(i+1,next_terminator-1 - i)<<std::endl;
                     break;
                 }
                 case '#': { //indicates ending words and start of metadata
@@ -242,7 +240,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     }
 
                     last_terminator = i; //save position of current terminator
-                    std::cout<<"#, index:"<<index<<std::endl;
                     break;
                 }
                 case ',':{ //separator of metadata
@@ -253,60 +250,57 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         break;
                     case 5:
                         type = line.substr(last_terminator+1, i-last_terminator-1); //load type
-
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator for lesson data
-                        std::cout<<line.substr(i+1,next_terminator-1 -i); //debug
                         lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
                         break;
                     default:
                         std::cerr<<words[0][0]<<" "<<index<<" "<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
                         std::cout<<"you're not supposed to be here"<<std::endl;
                     }
-                    std::cout<<", index:"<<index<<" word i push"<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
 
                     last_terminator = i; //save position of current terminator
                     break;
                 }
                 case '@':{
-                    if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
+                    if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
 
+                        std::cout<<"line is "<<line<<" | index is "<<line[next_terminator]<<std::endl;
                         std::cout<<"next terminator "<<static_cast<int>(next_terminator)<<std::endl;
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
-                        if(input.substr(i+1, 3) == "en:"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].en_usage =  line.substr(i+3,next_terminator-i+2);
+                        if(line.substr(i+1, 3) == "en:"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].en_usage =  line.substr(i+3,next_terminator-3 - i);
+                            std::cout<<"english usage: "<<prompt[prompt.size()-1].en_usage<<std::endl;
                         }
-                        else if(input.substr(i+1, 3) == "jp:"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].jp_usage =  line.substr(i+3,next_terminator-i+2);
+                        else if(line.substr(i+1, 3) == "jp:"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].jp_usage =  line.substr(i+3,next_terminator-3 - i);
+                            std::cout<<"japanese usage: "<<prompt[prompt.size()-1].jp_usage<<std::endl;
                         }
                         else{
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
                         }
                     }
 
-                    std::cout<<"@ index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<" "<<i<<std::endl;
-
                     i = next_terminator -1; //land on next terminator in next loop, saves time
-                    std::cout<<"current i: "<<i<<" ,next terminator"<<next_terminator<<std::endl;
                     break;
                 }
                 case '<':{
-                    if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
+                    if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
-                        if(input.substr(i+1, 3) == "en>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].en_commentary.size() < 4) prompt[prompt.size()-1].en_commentary.push_back(line.substr(i+3,next_terminator-i+2)); //ensure there is no more commentary than 3
+                        if(line.substr(i+1, 3) == "en>"){ //check if rest of sequency is japanese or english
+                            if(prompt[prompt.size()-1].en_commentary.size() < 4) prompt[prompt.size()-1].en_commentary.push_back(line.substr(i+3,next_terminator-3 - i)); //ensure there is no more commentary than 3
                         }
-                        else if(input.substr(i+1, 3) == "jp>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].jp_commentary.size() < 4) prompt[prompt.size()-1].jp_commentary.push_back(line.substr(i+3,next_terminator-i+2));
+                        else if(line.substr(i+1, 3) == "jp>"){ //check if rest of sequency is japanese or english
+                            if(prompt[prompt.size()-1].jp_commentary.size() < 4) prompt[prompt.size()-1].jp_commentary.push_back(line.substr(i+3,next_terminator-3 - i));
                         }
                         else{
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
@@ -319,18 +313,18 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     break;
                 }
                 case '$':{
-                    if(i+3 < input.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
+                    if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
-                        if(input.substr(i+1, 3) == "en$"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].en_audio_path =  line.substr(i+3,next_terminator-i+2);
+                        if(line.substr(i+1, 3) == "en$"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].en_audio_path =  line.substr(i+3,next_terminator-3 - i);
                         }
-                        else if(input.substr(i+1, 3) == "jp$"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].jp_audio_path =  line.substr(i+3,next_terminator-i+2);
+                        else if(line.substr(i+1, 3) == "jp$"){ //check if rest of sequency is japanese or english
+                            prompt[prompt.size()-1].jp_audio_path =  line.substr(i+3,next_terminator-3 - i);
                         }
                         else{
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
