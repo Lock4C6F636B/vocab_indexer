@@ -197,11 +197,14 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         size_t last_terminator = 0, next_terminator = 0;
         size_t index = 0;  // Reset language index (0=english, 1=romanji, etc.) and metadata, 0-3 + 3 (type,type_id,lesson)
 
-        // Temporary storage for current word parts
+        // Temporary storage for current word parts... NEED for multiple entries of same word (multiple meanings)
         std::array<std::vector<std::string>, 4> words;
         uint8_t type_ID;
-        std::string type;
-        unsigned int lesson;
+        std::string Type;
+        unsigned int Lesson;
+        std::string en_Usage, jp_Usage;
+        std::vector<std::string> en_Commentary, jp_Commentary; //for both english and japanese, english first
+        std::string en_Audio_path, jp_Audio_path;
 
         for(size_t i = 0; i < line.size(); i++){
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
@@ -229,16 +232,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     break;
                 }
                 case '#': { //indicates ending words and start of metadata
-                    for (size_t i0 = 0; i0 < words[0].size(); i0++) {
-                        for (size_t i1 = 0; i1 < words[1].size(); i1++) {
-                            for (size_t i2 = 0; i2 < words[2].size(); i2++) {
-                                for (size_t i3 = 0; i3 < words[3].size(); i3++) {
-                                    prompt.emplace_back(user(std::array<std::string, 4>{words[0][i0], words[1][i1], words[2][i2], words[3][i3]},type_ID, type, lesson));
-                                }
-                            }
-                        }
-                    }
-
                     last_terminator = i; //save position of current terminator
                     break;
                 }
@@ -249,9 +242,9 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1)); //load type_id
                         break;
                     case 5:
-                        type = line.substr(last_terminator+1, i-last_terminator-1); //load type
+                        Type = line.substr(last_terminator+1, i-last_terminator-1); //load type
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator for lesson data
-                        lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
+                        Lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
                         break;
                     default:
                         std::cerr<<words[0][0]<<" "<<index<<" "<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
@@ -265,20 +258,15 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
 
-                        std::cout<<"line is "<<line<<" | index is "<<line[next_terminator]<<std::endl;
-                        std::cout<<"next terminator "<<static_cast<int>(next_terminator)<<std::endl;
-
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
                         if(line.substr(i+1, 3) == "en:"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].en_usage =  line.substr(i+3,next_terminator-3 - i);
-                            std::cout<<"english usage: "<<prompt[prompt.size()-1].en_usage<<std::endl;
+                            en_Usage =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else if(line.substr(i+1, 3) == "jp:"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].jp_usage =  line.substr(i+3,next_terminator-3 - i);
-                            std::cout<<"japanese usage: "<<prompt[prompt.size()-1].jp_usage<<std::endl;
+                            jp_Usage =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else{
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
@@ -290,24 +278,22 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case '<':{
                     if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+4); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
                         if(line.substr(i+1, 3) == "en>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].en_commentary.size() < 4) prompt[prompt.size()-1].en_commentary.push_back(line.substr(i+3,next_terminator-3 - i)); //ensure there is no more commentary than 3
+                            if(prompt[prompt.size()-1].en_commentary.size() < 4) en_Commentary.push_back(line.substr(i+4,next_terminator-4 - i)); //ensure there is no more commentary than 3
                         }
                         else if(line.substr(i+1, 3) == "jp>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].jp_commentary.size() < 4) prompt[prompt.size()-1].jp_commentary.push_back(line.substr(i+3,next_terminator-3 - i));
+                            if(prompt[prompt.size()-1].jp_commentary.size() < 4) jp_Commentary.push_back(line.substr(i+4,next_terminator-4 - i));
                         }
                         else{
                             std::cerr<<"this is not correct usage syntax"<<std::endl;
                         }
                     }
-
-                    std::cout<<"< index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<std::endl;
 
                     i = next_terminator -1; //land on next terminator in next loop, saves time
                     break;
@@ -321,22 +307,30 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         }
 
                         if(line.substr(i+1, 3) == "en$"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].en_audio_path =  line.substr(i+3,next_terminator-3 - i);
+                            en_Audio_path =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else if(line.substr(i+1, 3) == "jp$"){ //check if rest of sequency is japanese or english
-                            prompt[prompt.size()-1].jp_audio_path =  line.substr(i+3,next_terminator-3 - i);
+                            jp_Audio_path =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else{
-                            std::cerr<<"this is not correct usage syntax"<<std::endl;
+                            std::cerr<<"this is not correct usage syntax "<<line.substr(i+1, 3)<<std::endl;
                         }
                     }
-
-                    std::cout<<"$ index:"<<index<<" word i push"<<line.substr(i+3,next_terminator-i+2)<<std::endl;
 
                     i = next_terminator -1; //land on next terminator in next loop, saves time
                     break;
                 }
                 case '~':{ //end of line terminator
+                    for (size_t i0 = 0; i0 < words[0].size(); i0++) {
+                        for (size_t i1 = 0; i1 < words[1].size(); i1++) {
+                            for (size_t i2 = 0; i2 < words[2].size(); i2++) {
+                                for (size_t i3 = 0; i3 < words[3].size(); i3++) {
+                                    prompt.emplace_back(user(std::array<std::string, 4>{words[0][i0], words[1][i1], words[2][i2], words[3][i3]},type_ID, Type, Lesson, en_Usage, jp_Usage, en_Commentary, jp_Commentary, en_Audio_path, jp_Audio_path));
+                                }
+                            }
+                        }
+                    }
+
                     break;
                 }
                 default: continue; //ignore if not terminator\

@@ -49,8 +49,12 @@ struct user{
     }
 
     // Constructor for a single word with index and metadata
-    user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int & Lesson,int index): type_id(Type_Id), type(Type), lesson(Lesson) {
-        prompt = words;
+    user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int &Lesson, const std::string &En_Usage, const std::string &Jp_Usage, const std::vector<std::string> &En_Commentary, const std::vector<std::string> &Jp_Commentary, const std::string &En_Audio_Path, const std::string &Jp_Audio_Path)
+        : type_id(Type_Id), type(Type), lesson(Lesson),
+        en_usage(En_Usage), jp_usage(Jp_Usage),
+        en_commentary(En_Commentary), jp_commentary(Jp_Commentary),
+        en_audio_path(En_Audio_Path), jp_audio_path(Jp_Audio_Path) {
+            prompt = words;
     }
 
     uint8_t get_mean(uint8_t language){ //returning meaning in this language
@@ -103,6 +107,14 @@ public:
         std::cout<<"starting show: \n"<<std::endl;
 
         for(const user &useru : prompt){
+            auto commentary =[](const std::vector<std::string> &comments){
+                std::cout<<"commentary: ";
+                for(const std::string &comment : comments){
+                    std::cout<<comment<<" | ";
+                }
+                std::cout<<"  ";
+            };
+
             for(uint8_t i = 0; i < useru.prompt.size(); i++){
                 switch(i){
                     case 0:
@@ -124,7 +136,12 @@ public:
             std::cout<<"word_id: "<<useru.word_id<<std::endl;
             std::cout<<"type_id: "<< static_cast<int>(useru.type_id) << std::endl;
             std::cout<<"type: "<<useru.type<<std::endl;
-            std::cout<<"lesson: "<<useru.lesson<<'\n'<<std::endl;
+            std::cout<<"lesson: "<<useru.lesson<<std::endl;
+            std::cout<<"en usage: "<<useru.en_usage<<" | jp usage: "<<useru.jp_usage<<std::endl;
+            commentary(useru.en_commentary);
+            commentary(useru.jp_commentary);
+            std::cout<<"\nen audio path: "<<useru.en_audio_path<<" | jp audio path: "<<useru.jp_audio_path<<"\n"<<std::endl;
+
         }
 
         std::cout<<"\n";
