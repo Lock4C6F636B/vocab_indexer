@@ -243,6 +243,12 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         break;
                     case 5:
                         Type = line.substr(last_terminator+1, i-last_terminator-1); //load type
+
+                        if(type_ID >= types.size() || types[type_ID] != Type){  //don't initiate this entry, if either type or type_id doesn not exist
+                            std::cerr<<"either this ["<<static_cast<int>(type_ID)<<"] isn't type_id or this ["<<Type<<"] is not the type"<<std::endl;
+                            goto skip_line;
+                        }
+
                         next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator for lesson data
                         Lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
                         break;
@@ -269,7 +275,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             jp_Usage =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else{
-                            std::cerr<<"this is not correct usage syntax"<<std::endl;
+                            std::cerr<<"@ this is not correct usage syntax"<<line.substr(i, 4)<<std::endl;
                         }
                     }
 
@@ -291,7 +297,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             if(prompt[prompt.size()-1].jp_commentary.size() < 4) jp_Commentary.push_back(line.substr(i+4,next_terminator-4 - i));
                         }
                         else{
-                            std::cerr<<"this is not correct usage syntax"<<std::endl;
+                            std::cerr<<"< this is not correct usage syntax"<<line.substr(i, 4)<<std::endl;
                         }
                     }
 
@@ -300,7 +306,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case '$':{
                     if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~\n", i+4); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
@@ -313,7 +319,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                             jp_Audio_path =  line.substr(i+4,next_terminator-4 - i);
                         }
                         else{
-                            std::cerr<<"this is not correct usage syntax "<<line.substr(i+1, 3)<<std::endl;
+                            std::cerr<<"$ this is not correct usage syntax "<<line.substr(i, 4)<<std::endl;
                         }
                     }
 
@@ -338,6 +344,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
             }
         }
+        skip_line: //do absolutely nothing, just skip the line
     }
 
     return true;
