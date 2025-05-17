@@ -39,7 +39,7 @@ struct user{
 
     //optional data... good to include
     std::string en_usage, jp_usage;
-    std::vector<std::string> en_commentary, jp_commentary; //for both english and japanese, english first
+    std::array<std::string,3> en_commentary, jp_commentary; //for both english and japanese, english first
     std::string en_audio_path, jp_audio_path;
 
     user() = default;
@@ -63,9 +63,23 @@ struct user{
     user(const std::array<std::string, 4>& words, const uint8_t &Type_Id, const std::string &Type, const unsigned int &Lesson, const std::string &En_Usage, const std::string &Jp_Usage, const std::vector<std::string> &En_Commentary, const std::vector<std::string> &Jp_Commentary, const std::string &En_Audio_Path, const std::string &Jp_Audio_Path)
         : type_id(Type_Id), type(Type), lesson(Lesson),
         en_usage(En_Usage), jp_usage(Jp_Usage),
-        en_commentary(En_Commentary), jp_commentary(Jp_Commentary),
         en_audio_path(En_Audio_Path), jp_audio_path(Jp_Audio_Path) {
             prompt = words;
+
+            for(uint8_t i = 0; i < 3; i++){
+                en_commentary[i] = i < En_Commentary.size()? En_Commentary[i] : ""; //if i is in range of commentary vector, copy the value, otherwise intialize empty
+                jp_commentary[i] = i < Jp_Commentary.size()? Jp_Commentary[i] : "";
+            }
+
+            std::cout<<"size en: "<<En_Commentary.size()<<", size jp: "<<Jp_Commentary.size();
+            for(const auto comment: en_commentary){
+                std::cout<<"["<<comment<<"] ";
+            }
+
+            for(const auto comment: jp_commentary){
+                std::cout<<"["<<comment<<"] ";
+            }
+            std::cout<<"\n";
     }
 
     uint8_t get_mean(uint8_t language){ //returning meaning in this language
@@ -119,7 +133,7 @@ public:
         std::cout<<"starting show: \n"<<std::endl;
 
         for(const user &useru : prompt){
-            auto commentary =[](const std::vector<std::string> &comments){
+            auto commentary =[](const std::array<std::string,3> &comments){
                 std::cout<<"commentary: ";
                 for(const std::string &comment : comments){
                     std::cout<<comment<<" | ";

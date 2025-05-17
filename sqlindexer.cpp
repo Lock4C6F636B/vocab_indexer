@@ -237,7 +237,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
     for(std::string &line : lines){
         //uint8_t current_index = 0, current_metadata = 0;
         size_t last_terminator = 0, next_terminator = 0;
-        size_t index = 0;  // Reset language index (0=english, 1=romanji, etc.) and metadata, 0-3 + 3 (type,type_id,lesson)
+        size_t current_data = 0, current_comment = 0;  // Reset language index (0=english, 1=romanji, etc.) and metadata, 0-3 + 3 (type,type_id,lesson)
 
         // Temporary storage for current word parts... NEED for multiple entries of same word (multiple meanings)
         std::array<std::vector<std::string>, 4> words;
@@ -249,29 +249,29 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         std::string en_Audio_path, jp_Audio_path;
 
         for(size_t i = 0; i < line.size(); i++){
-            if(line[i] != '~'){ //if the line is not ending with '~', skip the line... otherwise it could get very inapproriate very quickly
+            if(line[line.size()-1] != '~'){ //if the line is not ending with '~', skip the line... otherwise it could get very inapproriate very quickly
                 goto skip_line;
             }
 
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
-                if(index == 0 && last_terminator == 0){ //first word of command must always be pushed in
-                    words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
+                if(current_data == 0 && last_terminator == 0){ //first word of command must always be pushed in
+                    words[current_data].push_back(line.substr(last_terminator, i-last_terminator)); //take current
                 }
 
                 //handle individul terminator cases
                 switch(line[i]){
                 case '|': {
                     next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
-                    words[index].push_back(line.substr(i+1,next_terminator-1 - i)); //store next word in on same index
+                    words[current_data].push_back(line.substr(i+1,next_terminator-1 - i)); //store next word in on same index
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
                     break;
                 }
                 case ';': {
-                    index++; //increment to new
+                    current_data++; //increment to new
                     next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
-                    words[index].push_back(line.substr(i+1,next_terminator-1 -i)); //store next word
+                    words[current_data].push_back(line.substr(i+1,next_terminator-1 -i)); //store next word
 
                     last_terminator = i; //save position of current terminator
                     i = next_terminator -1; //land on next terminator in next loop, saves time
@@ -282,8 +282,8 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                     break;
                 }
                 case ',':{ //separator of metadata
-                    index++;
-                    switch(index){
+                    current_data++;
+                    switch(current_data){
                     case 4:
                         type_ID = std::stoi(line.substr(last_terminator+1, i-last_terminator-1)); //load type_id
                         break;
@@ -299,7 +299,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         Lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
                         break;
                     default:
-                        std::cerr<<words[0][0]<<" "<<index<<" "<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
+                        std::cerr<<words[0][0]<<" "<<current_data<<" "<<line.substr(last_terminator+1, i-last_terminator-1)<<std::endl;
                         std::cout<<"you're not supposed to be here"<<std::endl;
                     }
 
@@ -593,13 +593,13 @@ bool SQLIndexer::write_SQL() {
             }
         }
 
-        for(size_t itr = 0; itr < currentIndex; itr++) { //check user sql table vector if word_id for lore_keeper hasn't already appeared before
+        for(size_t itr = 0; itr < lore_keeper.size(); itr++) { //check user sql table vector if word_id for lore_keeper hasn't already appeared before
             if(lore_keeper[itr].word_id == prompt[currentIndex].word_id) {
                 return true;
             }
         }
 
-        for(size_t itr = 0; itr < currentIndex; itr++) { //check user sql table vector if word_id for voice_crypt hasn't already appeared before
+        for(size_t itr = 0; itr < voice_crypt.size(); itr++) { //check user sql table vector if word_id for voice_crypt hasn't already appeared before
             if(voice_crypt[itr].word_id == prompt[currentIndex].word_id) {
                 return true;
             }
@@ -659,6 +659,10 @@ bool SQLIndexer::write_SQL() {
         QSqlQuery query(db);
 
         //take care of lore_keeper
+        if(entry.en_usage == "" || entry.jp_usage == "" || entry.en_commentary[0] == "" || entry.jp_commentary[0] == ""){
+            goto skip_inserting_lore_keeper;
+        }
+
         query.prepare("INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) " "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         std::cout << "INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) VALUES (" //output to make sure
                   << entry.word_id << ","
@@ -687,7 +691,12 @@ bool SQLIndexer::write_SQL() {
             return false;
         }
 
+    skip_inserting_lore_keeper:
         //take care of voice_crypt
+        if(entry.en_audio_path == "" || entry.jp_audio_path == ""){
+            goto skip_inserting_voice_crypt;
+        }
+
         query.prepare("INSERT INTO voice_crypt (word_id, en_audio, jp_audio) " "VALUES (?, ?, ?)");
         std::cout << "INSERT INTO voice_crypt (word_id, en_audio, jp_audio) VALUES ("
                   << entry.word_id << ","
@@ -703,6 +712,8 @@ bool SQLIndexer::write_SQL() {
             qDebug() << "Error inserting into voice_crypt:" << query.lastError().text();
             return false;
         }
+
+    skip_inserting_voice_crypt:
         return true;
     };
 
