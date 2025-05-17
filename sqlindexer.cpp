@@ -40,8 +40,50 @@ bool SQLIndexer::load_SQL(const std::string filename){
         return true;
     };
 
+    auto loadLoreTable = [&db, this]() {
+        QSqlQuery query(db);
+        if (!query.exec("SELECT word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3 FROM lore_keeper")) {
+            qDebug() << "Error executing query on lore_keeper:" << query.lastError().text();
+            return false;
+        }
+
+        while (query.next()) {
+            lore lore;
+            lore.word_id = query.value(0).toUInt();
+            lore.en_usage = query.value(1).toString().toStdString();
+            lore.jp_usage = query.value(2).toString().toStdString();
+            lore.en_commentary[0] = query.value(3).toString().toStdString();
+            lore.en_commentary[1] = query.value(4).toString().toStdString();
+            lore.en_commentary[2] = query.value(5).toString().toStdString();
+            lore.jp_commentary[0] = query.value(6).toString().toStdString();
+            lore.jp_commentary[1] = query.value(7).toString().toStdString();
+            lore.jp_commentary[2] = query.value(8).toString().toStdString();
+
+            lore_keeper.push_back(lore);
+        }
+        return true;
+    };
+
+    auto loadAudioTable = [&db, this]() {
+        QSqlQuery query(db);
+        if (!query.exec("SELECT word_id, en_audio, jp_audio FROM voice_crypt")) {
+            qDebug() << "Error executing query on voice_crypt:" << query.lastError().text();
+            return false;
+        }
+
+        while (query.next()) {
+            audio audio;
+            audio.word_id = query.value(0).toUInt();
+            audio.en_audio_path = query.value(1).toString().toStdString();
+            audio.jp_audio_path = query.value(2).toString().toStdString();
+
+            voice_crypt.push_back(audio);
+        }
+        return true;
+    };
+
     // Load each table
-    bool success = loadTable("english", english) && loadTable("romanji", romanji) && loadTable("japanese", japanese) && loadTable("full_japanese", full_japanese);
+    bool success = loadTable("english", english) && loadTable("romanji", romanji) && loadTable("japanese", japanese) && loadTable("full_japanese", full_japanese) && loadLoreTable() && loadAudioTable();
 
     std::cout<<"loading tables success"<<std::endl;
 
@@ -207,6 +249,10 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         std::string en_Audio_path, jp_Audio_path;
 
         for(size_t i = 0; i < line.size(); i++){
+            if(line[i] != '~'){ //if the line is not ending with '~', skip the line... otherwise it could get very inapproriate very quickly
+                goto skip_line;
+            }
+
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
                 if(index == 0 && last_terminator == 0){ //first word of command must always be pushed in
                     words[index].push_back(line.substr(last_terminator, i-last_terminator)); //take current
@@ -493,9 +539,9 @@ bool SQLIndexer::write_SQL() {
     db.transaction();
     bool insert_success = true;
 
-    auto is_redundant = [this](const user& entry, const uint8_t languageIndex, const size_t &currentIndex) -> bool {
+    auto is_redundant_word = [this](const uint8_t languageIndex, const size_t &currentIndex) -> bool {
         for(size_t itr = 0; itr < currentIndex; itr++) {
-            if(entry[languageIndex] == prompt[itr][languageIndex]) {
+            if(prompt[currentIndex][languageIndex] == prompt[itr][languageIndex]) {
                 return true;
             }
         }
@@ -503,7 +549,7 @@ bool SQLIndexer::write_SQL() {
         switch(languageIndex){
         case 0:
             for(const element &e : english){
-                if(entry[languageIndex] == e.word){
+                if(prompt[currentIndex][languageIndex] == e.word){
                     return true;
                 }
             }
@@ -511,7 +557,7 @@ bool SQLIndexer::write_SQL() {
 
         case 1:
             for(const element &e : romanji){
-                if(entry[languageIndex] == e.word){
+                if(prompt[currentIndex][languageIndex] == e.word){
                     return true;
                 }
             }
@@ -519,7 +565,7 @@ bool SQLIndexer::write_SQL() {
 
         case 2:
             for(const element &e : japanese){
-                if(entry[languageIndex] == e.word){
+                if(prompt[currentIndex][languageIndex] == e.word){
                     return true;
                 }
             }
@@ -527,7 +573,7 @@ bool SQLIndexer::write_SQL() {
 
         case 3:
             for(const element &e : full_japanese){
-                if(entry[languageIndex] == e.word){
+                if(prompt[currentIndex][languageIndex] == e.word){
                     return true;
                 }
             }
@@ -540,9 +586,31 @@ bool SQLIndexer::write_SQL() {
         return false;
     };
 
+    auto is_redundant_add_data = [this](const size_t &currentIndex) -> bool {
+        for(size_t itr = 0; itr < currentIndex; itr++) { //check user prompt if word_id for lore_keeper hasn't already appeared before
+            if(prompt[itr].word_id == prompt[currentIndex].word_id) {
+                return true;
+            }
+        }
+
+        for(size_t itr = 0; itr < currentIndex; itr++) { //check user sql table vector if word_id for lore_keeper hasn't already appeared before
+            if(lore_keeper[itr].word_id == prompt[currentIndex].word_id) {
+                return true;
+            }
+        }
+
+        for(size_t itr = 0; itr < currentIndex; itr++) { //check user sql table vector if word_id for voice_crypt hasn't already appeared before
+            if(voice_crypt[itr].word_id == prompt[currentIndex].word_id) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     // Helper function to insert into a specific table
-    auto insertIntoTable = [&db, &insert_success](const QString& tableName, const user& entry, const int languageIndex) {
-        if (entry.prompt[languageIndex].empty()) return false; // Skip empty entries, though none should be empty
+    auto insertIntoTable_word = [&db, &insert_success](const QString& tableName, const user& entry, const int languageIndex) {
+        if (entry.prompt[languageIndex].empty() || entry.word_id == -1) return false; // Skip empty entries, though none should be empty
 
         // After preparing the query but before executing it:
         std::cout << "Attempting to insert into " << tableName.toStdString()
@@ -550,7 +618,8 @@ bool SQLIndexer::write_SQL() {
                   << " type: " << entry.type
                   << " type: " << static_cast<int>(entry.type_id)
                   << " word: " << entry.prompt[languageIndex]
-                  << " meaning: " << static_cast<int>(entry.meaning[languageIndex]) << std::endl;
+                  << " meaning: " << static_cast<int>(entry.meaning[languageIndex])
+                  << std::endl;
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
@@ -571,32 +640,110 @@ bool SQLIndexer::write_SQL() {
         return true;
     };
 
+    auto insertIntoTable_add_data = [&db, &insert_success](const user& entry) {
+        if (entry.word_id == -1) return false; //just checking, but seriously if this happens, something is very wrong
+
+        // After preparing the query but before executing it:
+        std::cout << "Attempting to insert into lore_keeper"
+                  << " word_id: " << entry.word_id
+                  << " en_usage: " << entry.en_usage
+                  << " jp_usage: " << entry.jp_usage
+                  << " en_commentary_1: " << entry.en_commentary[0]
+                  << " en_commentary_2: " << entry.en_commentary[1]
+                  << " en_commentary_3: " << entry.en_commentary[2]
+                  << " jp_commentary_1: " << entry.jp_commentary[0]
+                  << " jp_commentary_2: " << entry.jp_commentary[1]
+                  << " jp_commentary_3: " << entry.jp_commentary[2]
+                  << std::endl;
+
+        QSqlQuery query(db);
+
+        //take care of lore_keeper
+        query.prepare("INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) " "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        std::cout << "INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) VALUES (" //output to make sure
+                  << entry.word_id << ","
+                  << "'" << entry.en_usage << "',"
+                  << "'" << entry.jp_usage << "',"
+                  << "'" << entry.en_commentary[0] << "',"
+                  << "'" << entry.en_commentary[1] << "',"
+                  << "'" << entry.en_commentary[2] << "',"
+                  << "'" << entry.jp_commentary[0] << "',"
+                  << "'" << entry.jp_commentary[1] << "',"
+                  << "'" << entry.jp_commentary[2] << "'"
+                  << ")" << std::endl;
+
+        query.addBindValue(entry.word_id);
+        query.addBindValue(QString::fromStdString(entry.en_usage));
+        query.addBindValue(QString::fromStdString(entry.jp_usage));
+        query.addBindValue(QString::fromStdString(entry.en_commentary[0]));
+        query.addBindValue(QString::fromStdString(entry.en_commentary[1]));
+        query.addBindValue(QString::fromStdString(entry.en_commentary[2]));
+        query.addBindValue(QString::fromStdString(entry.jp_commentary[0]));
+        query.addBindValue(QString::fromStdString(entry.jp_commentary[1]));
+        query.addBindValue(QString::fromStdString(entry.jp_commentary[2]));
+
+        if (!query.exec()) {
+            qDebug() << "Error inserting into lore_keeper:" << query.lastError().text();
+            return false;
+        }
+
+        //take care of voice_crypt
+        query.prepare("INSERT INTO voice_crypt (word_id, en_audio, jp_audio) " "VALUES (?, ?, ?)");
+        std::cout << "INSERT INTO voice_crypt (word_id, en_audio, jp_audio) VALUES ("
+                  << entry.word_id << ","
+                  << "'" << entry.en_audio_path << "',"
+                  << "'" << entry.jp_audio_path << "'"
+                  << ")" << std::endl;
+
+        query.addBindValue(entry.word_id);
+        query.addBindValue(QString::fromStdString(entry.en_audio_path));
+        query.addBindValue(QString::fromStdString(entry.jp_audio_path));
+
+        if (!query.exec()) {
+            qDebug() << "Error inserting into voice_crypt:" << query.lastError().text();
+            return false;
+        }
+        return true;
+    };
+
     // Process each entry
     for (size_t i = 0; i < prompt.size(); ++i) {
         // Insert into each table if the corresponding field is not empty
-        if(!is_redundant(prompt[i],0,i)){ //insert only if the word not already included in table
-            insert_success = insertIntoTable("english", prompt[i], 0);
+        //english
+        if(!is_redundant_word(0,i)){ //insert only if the word not already included in table
+            insert_success = insertIntoTable_word("english", prompt[i], 0);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],1,i)){ //insert only if the word not already included in table
-            insert_success = insertIntoTable("romanji", prompt[i], 1);
+        //romanji
+        if(!is_redundant_word(1,i)){ //insert only if the word not already included in table
+            insert_success = insertIntoTable_word("romanji", prompt[i], 1);
             if(!insert_success){
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],2,i)){ //insert only if the word not already included in table
-            insert_success = insertIntoTable("japanese", prompt[i], 2);
+        //japanese
+        if(!is_redundant_word(2,i)){ //insert only if the word not already included in table
+            insert_success = insertIntoTable_word("japanese", prompt[i], 2);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }
         }
 
-        if(!is_redundant(prompt[i],3,i)){ //insert only if the word not already included in table
-            insert_success = insertIntoTable("full_japanese", prompt[i], 3);
+        //full_japanese
+        if(!is_redundant_word(3,i)){ //insert only if the word not already included in table
+            insert_success = insertIntoTable_word("full_japanese", prompt[i], 3);
+            if(!insert_success){ //attempt insertion into english, if fail end the function
+                break;
+            }
+        }
+
+        //lore_keeper and voice_crypt
+        if(!is_redundant_add_data(i)){ //insert only if the word not already included in table
+            insert_success = insertIntoTable_add_data(prompt[i]);
             if(!insert_success){ //attempt insertion into english, if fail end the function
                 break;
             }

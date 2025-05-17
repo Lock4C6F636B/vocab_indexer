@@ -18,6 +18,17 @@ struct element {
     std::string word;
 };
 
+struct lore{
+    unsigned int word_id;
+    std::string en_usage, jp_usage;
+    std::array<std::string,3> en_commentary, jp_commentary; //for both english and japanese, english first
+};
+
+struct audio{
+    unsigned int word_id;
+    std::string en_audio_path, jp_audio_path;
+};
+
 struct user{
     std::array<std::string,4> prompt; //here user inputs one string for english, one for romanji and so on...
     std::array<uint8_t, 4> meaning = {0,0,0,0}; //meaning is not universal... preset for one meaning
@@ -83,7 +94,8 @@ private:
     std::vector<element> romanji;
     std::vector<element> japanese;
     std::vector<element> full_japanese;
-
+    std::vector<lore> lore_keeper;
+    std::vector<audio> voice_crypt;
 
     std::vector<user> prompt;
     //std::vector<std::array<std::string,4>> prompt; //here user inputs one string for english, one for romanji and so on...
