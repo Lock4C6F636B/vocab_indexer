@@ -126,7 +126,7 @@ bool SQLIndexer::process() noexcept{
 
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
-        filepath = "/home/kasumi/programming/c++/vocab_indexer/tesuto.txt";
+        filepath = "/home/kasumi/programming/c++/vocab_indexer/test.txt";
         //std::getline(std::cin, filepath);
 
         std::ifstream prompt_file(filepath);
@@ -183,7 +183,7 @@ void SQLIndexer::stripper(std::string &input) noexcept {
             comment_start_i = i;
         }
 
-        if(comment_start_i != -1){
+        if(comment_start_i != -1){ //if comment start is initialized
             if(input[i] == '\n' || i == input.size()-1){ //cut comment until end of line
                 input.erase(comment_start_i,i-comment_start_i); //cut of comment line
                 i = comment_start_i; //index must actually be synchronized to new size, otherwise out of bounds
@@ -204,7 +204,7 @@ void SQLIndexer::stripper(std::string &input) noexcept {
                     continue;
                 } else i++; //or i can do break
             }
-            else if(((input[i] == ' ') || (input[i] == '\n') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
+            else if(((input[i] == ' ') || (input[i] == '\t')) &&  ((std::find(terminators.begin(), terminators.end(), input[i+1]) != terminators.end()) || (std::find(terminators.begin(), terminators.end(), input[i-1]) != terminators.end()))){
                 input.erase(i, 1); //erase current whitespace
             }
             else i++; //upon erasing on currnet index... the indexes shift to lower (i+1 == current i)... hence need to increment conditionally
@@ -229,23 +229,20 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
     std::vector<std::string> lines;
     for(size_t i = 0; i < input.size();i++){
         if(input[i] == '\n'){
-            lines.emplace_back(input.substr(0,i+1));
+            if((i > 0) && input[i-1] == '~'){
+                lines.emplace_back(input.substr(0,i));
+            }
             input = input.substr(i+1);
             i = 0;
         }
     }
 
-    //eliminate all commands without '~'
-    for(size_t i = 0; i < lines.size(); i++){
-        if(lines[i][lines[i].size()] != '~'){
-            lines.erase(lines.begin()+i);
-        }
-    }
-
-    //DEBUG
+    /*
+    std::cout<<"got to debugging lines"<<std::endl;
     for(auto line:lines){
         std::cout<<line<<std::endl;
     }
+    */
 
     //set variables for digesting input
     std::array<char,8> terminators = {';','|','#',',','~','@','<','$'};
@@ -706,7 +703,7 @@ bool SQLIndexer::write_SQL() {
                 }
             case 1:
                 for(const audio &path : jp_audio_crypt){
-                    if(prompt[currentIndex].en_audio_path[currentInnerIndex].first == path.path){
+                    if(prompt[currentIndex].jp_audio_path[currentInnerIndex].first == path.path){
                         return true;
                     }
                 }
@@ -777,19 +774,19 @@ bool SQLIndexer::write_SQL() {
             query.addBindValue(word_id);
             if (!query.exec()) {
                 qDebug() << "Error updating"+ QString::fromStdString(element_name)+":"<< query.lastError().text();
-                return false;
+                return;
             }
         };
 
         //insert only if not empty
         if(entry.en_usage != "") add_optional_element("en_usage", entry.en_usage);
         if(entry.en_usage != "") add_optional_element("jp_usage", entry.jp_usage);
-        if(entry.en_usage != "") add_optional_element("en_commentary_0",entry.en_commentary[0]);
-        if(entry.en_usage != "") add_optional_element("en_commentary_1",entry.en_commentary[1]);
-        if(entry.en_usage != "") add_optional_element("en_commentary_2",entry.en_commentary[2]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_0",entry.jp_commentary[0]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_1",entry.jp_commentary[1]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_2",entry.jp_commentary[2]);
+        if(entry.en_usage != "") add_optional_element("en_commentary_1",entry.en_commentary[0]);
+        if(entry.en_usage != "") add_optional_element("en_commentary_2",entry.en_commentary[1]);
+        if(entry.en_usage != "") add_optional_element("en_commentary_3",entry.en_commentary[2]);
+        if(entry.en_usage != "") add_optional_element("jp_commentary_1",entry.jp_commentary[0]);
+        if(entry.en_usage != "") add_optional_element("jp_commentary_2",entry.jp_commentary[1]);
+        if(entry.en_usage != "") add_optional_element("jp_commentary_3",entry.jp_commentary[2]);
 
         if (!query.exec()) {
             qDebug() << "Error inserting into lore_keeper:" << query.lastError().text();
@@ -879,8 +876,8 @@ bool SQLIndexer::write_SQL() {
             }
         }
 
-        //en voice_crypt
-        for(uint8_t itr = 0; itr < prompt[i].en_audio_path.size(); itr++){
+        //jp voice_crypt
+        for(uint8_t itr = 0; itr < prompt[i].jp_audio_path.size(); itr++){
             if(!is_redundant_audio(0, i, itr)){ //insert only if the word not already included in table
                 insert_success = insertIntoTable_add_audio("jp_audio_crypt", prompt[i].jp_audio_path[itr], prompt[i].word_id);
                 if(!insert_success){ //attempt insertion into english, if fail end the function

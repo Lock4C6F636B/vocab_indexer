@@ -1,0 +1,80 @@
+// Comprehensive test file for SQLIndexer - stress testing all features
+// Testing all 9 types: mixed(0), noun(1), adjective(2), pronoun(3), number(4), verb(5), adverb(6), preposition(7), conjunction(8)
+
+// Basic word entries - one for each type
+greeting;konnichiwa;こんにちは;今日は #0,mixed,1~
+cat;neko;ねこ;猫 #1,noun,6~
+beautiful;utsukushii;うつくしい;美しい #2,adjective,7~
+I;watashi;わたし;私 #3,pronoun,1~
+one;ichi;いち;一 #4,number,11~
+eat;taberu;たべる;食べる #5,verb,5~
+quickly;hayaku;はやく;早く #6,adverb,8~
+at;de;で;で #7,preposition,9~
+and;to;と;と #8,conjunction,8~
+
+// Testing multiple alternatives with pipe separator
+hello|hi|hey;konnichiwa|ya|oi;こんにちは|や|おい;今日は|や|おい #0,mixed,1~
+dog|puppy|hound;inu|koinu|ken;いぬ|こいぬ|けん;犬|子犬|犬 #1,noun,6~
+red|crimson|scarlet;akai|shinku|hiiro;あかい|しんく|ひいろ;赤い|深紅|緋色 #2,adjective,7~
+
+// Testing with basic metadata (usage examples)
+water;mizu;みず;水 #1,noun,3 @en:I drink water every day. @jp:毎日水を飲みます。~
+run;hashiru;はしる;走る #5,verb,15 @en:She runs in the park. @jp:彼女は公園で走ります。~
+
+// Testing with commentary
+fire;hi;ひ;火 #1,noun,28 <en>Essential element for cooking <en>Can be dangerous if not controlled <jp>料理に欠かせない要素 <jp>制御しないと危険~
+study;benkyou;べんきょう;勉強 #5,verb,15 <en>Requires dedication <en>Practice makes perfect <en>Knowledge is power <jp>集中が必要 <jp>継続は力なり~
+
+// Testing with audio paths
+thank you;arigatou;ありがとう;有難う #0,mixed,2 $en$/audio/en/thank_you_1.mp3 $en$/audio/en/thank_you_2.mp3 $jp$/audio/jp/arigatou_1.mp3 $jp$/audio/jp/arigatou_2.mp3~
+good morning;ohayou;おはよう;お早う #0,mixed,1 $en$/audio/en/good_morning.wav $jp$/audio/jp/ohayou.wav~
+
+// Testing comprehensive entries with ALL metadata types
+love;ai;あい;愛 #1,noun,18 @en:Love conquers all things. @jp:愛はすべてを克服する。 <en>Universal human emotion <en>Drives many life decisions <en>Source of both joy and pain <jp>普遍的な人間の感情 <jp>多くの人生の決断を動かす $en$/audio/en/love_formal.mp3 $en$/audio/en/love_casual.mp3 $jp$/audio/jp/ai_formal.mp3 $jp$/audio/jp/ai_casual.mp3~
+
+// Testing edge cases - very long content
+supercalifragilisticexpialidocious;chou-shinpi-teki-na-kotoba;ちょうしんぴてきなことば;超神秘的な言葉 #2,adjective,30 @en:This is an extraordinarily long word used to test the system's ability to handle very lengthy input strings without breaking or causing buffer overflows. @jp:これは非常に長い単語で、システムが非常に長い入力文字列を処理し、バッファオーバーフローを起こさずに処理できるかをテストするために使用されます。 <en>A nonsensical word from Mary Poppins <en>Used to test system limits <en>Represents magical or extraordinary qualities <jp>メリー・ポピンズの無意味な言葉 <jp>システムの限界をテストするために使用 <jp>魔法的または特別な性質を表す $en$/very/long/path/to/audio/files/that/tests/filesystem/limits/supercalifragilisticexpialidocious.mp3 $jp$/非常に/長い/パス/オーディオ/ファイル/システム/限界/テスト/超神秘的な言葉.mp3~
+
+// Testing duplicate handling - same word, different meanings
+bank;ginkou;ぎんこう;銀行 #1,noun,8 @en:I went to the bank to deposit money. @jp:お金を預けるために銀行に行きました。~
+bank;dote;どて;土手 #1,noun,9 @en:We sat on the river bank. @jp:川の土手に座りました。~
+bank;katamuke;かたむけ;傾け #5,verb,15 @en:The airplane will bank to the left. @jp:飛行機は左に傾きます。~
+
+// Testing numbers and special characters
+zero;rei;れい;零 #4,number,11~
+one hundred;hyaku;ひゃく;百 #4,number,11~
+one thousand;sen;せん;千 #4,number,11~
+ten thousand;ichiman;いちまん;一万 #4,number,11~
+
+// Testing with empty optional fields (should still work)
+simple;kantan;かんたん;簡単 #2,adjective,15~
+complex;fukuzatsu;ふくざつ;複雑 #2,adjective,15 @en: @jp:~
+
+// Testing pronouns
+you;anata;あなた;貴方 #3,pronoun,1~
+he|she|it;kare|kanojo|sore;かれ|かのじょ|それ;彼|彼女|それ #3,pronoun,14~
+
+// Testing conjunctions and prepositions  
+but;demo;でも;でも #8,conjunction,8~
+because;kara;から;から #8,conjunction,12~
+in|inside;naka|uchi;なか|うち;中|内 #7,preposition,9~
+on|above;ue|jou;うえ|じょう;上|上 #7,preposition,9~
+
+// Testing adverbs
+very;totemo;とても;とても #6,adverb,6~
+always;itsumo;いつも;いつも #6,adverb,12~
+never;kesshite;けっして;決して #6,adverb,12~
+
+// Testing edge case - minimal entry
+ok;ok;おけ;オケ #0,mixed,3~
+
+// Testing with special Japanese characters
+Mt. Fuji;fujisan;ふじさん;富士山 #1,noun,28 @en:Japan's highest mountain. @jp:日本の最高峰。 <en>Sacred mountain in Japan <en>Popular tourist destination <jp>日本の神聖な山 <jp>人気の観光地~
+
+// Comments should be ignored completely
+// This is a comment line and should not be processed
+ignored;line;without;terminator #1,noun,1
+// Another comment
+
+// Testing maximum lesson number
+final;saigo;さいご;最後 #1,noun,30~
