@@ -96,13 +96,6 @@ struct user{
             jp_audio_path.push_back(Jp_Audio_Path[i]);
         }
 
-        std::cout<<"size en: "<<En_Commentary.size()<<", size jp: "<<Jp_Commentary.size();
-        for(const auto comment: en_commentary){
-            std::cout<<"["<<comment<<"] ";
-        }
-        for(const auto comment: jp_commentary){
-            std::cout<<"["<<comment<<"] ";
-        }
         std::cout<<"\n";
     }
 

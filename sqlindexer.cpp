@@ -126,7 +126,7 @@ bool SQLIndexer::process() noexcept{
 
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
-        filepath = "/home/kasumi/programming/c++/vocab_indexer/test.txt";
+        filepath = "/home/kasumi/programming/c++/vocab_indexer/test_simple.txt";
         //std::getline(std::cin, filepath);
 
         std::ifstream prompt_file(filepath);
@@ -211,8 +211,6 @@ void SQLIndexer::stripper(std::string &input) noexcept {
         }
     }
 
-    std::cout<<'\n'<<'\n'<<input<<'\n'<<std::endl; //just debug
-
     return;
 }
 
@@ -225,24 +223,19 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
 
     stripper(input); //better call stripper here
 
-    //cut input into separate lines
     std::vector<std::string> lines;
-    for(size_t i = 0; i < input.size();i++){
-        if(input[i] == '\n'){
-            if((i > 0) && input[i-1] == '~'){
-                lines.emplace_back(input.substr(0,i));
-            }
-            input = input.substr(i+1);
-            i = 0;
+    std::stringstream ss(input);
+    std::string line;
+    while(std::getline(ss, line)) {
+        if(!line.empty() && line.back() == '~') {
+            lines.push_back(line);
         }
     }
 
-    /*
     std::cout<<"got to debugging lines"<<std::endl;
     for(auto line:lines){
         std::cout<<line<<std::endl;
     }
-    */
 
     //set variables for digesting input
     std::array<char,8> terminators = {';','|','#',',','~','@','<','$'};
@@ -262,10 +255,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         std::vector<std::string> en_Audio_path, jp_Audio_path;
 
         for(size_t i = 0; i < line.size(); i++){
-            if(line[line.size()-1] != '~'){ //if the line is not ending with '~', skip the line... otherwise it could get very inapproriate very quickly
-                goto skip_line;
-            }
-
             if(std::find(terminators.begin(), terminators.end(), line[i]) != terminators.end()){ //firstly find terminator
                 if(current_data == 0 && last_terminator == 0){ //first word of command must always be pushed in
                     words[current_data].push_back(line.substr(last_terminator, i-last_terminator)); //take current
@@ -274,7 +263,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 //handle individul terminator cases
                 switch(line[i]){
                 case '|': {
-                    next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+                    next_terminator = line.find_first_of(";|#@<$~", i+1); //find next terminator to determine length
                     words[current_data].push_back(line.substr(i+1,next_terminator-1 - i)); //store next word in on same index
 
                     last_terminator = i; //save position of current terminator
@@ -283,7 +272,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case ';': {
                     current_data++; //increment to new
-                    next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length, +1 is important to not much current terminator
+                    next_terminator = line.find_first_of(";|#@<$~", i+1); //find next terminator to determine length, +1 is important to not much current terminator
                     words[current_data].push_back(line.substr(i+1,next_terminator-1 -i)); //store next word
 
                     last_terminator = i; //save position of current terminator
@@ -302,13 +291,11 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                         break;
                     case 5:
                         Type = line.substr(last_terminator+1, i-last_terminator-1); //load type
-
-                        if(type_ID >= types.size() || types[type_ID] != Type){  //don't initiate this entry, if either type or type_id doesn not exist
-                            std::cerr<<"either this ["<<static_cast<int>(type_ID)<<"] isn't type_id or this ["<<Type<<"] is not the type"<<std::endl;
+                        if(type_ID >= types.size() || types[type_ID] != Type){  //don't initiate this entry, if either type or type_id doesnt not exist in system 0-8
                             goto skip_line;
                         }
 
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator for lesson data
+                        next_terminator = line.find_first_of(";|#@<$~", i+1); //find next terminator for lesson data
                         Lesson = std::stoi(line.substr(i+1,next_terminator-1 -i)); //load lesson
                         break;
                     default:
@@ -321,7 +308,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case '@':{
                     if(i+3 < line.size()){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+1); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~", i+1); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
@@ -343,17 +330,17 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case '<':{
                     if(i+3 < line.size() && line[i+3] == '>'){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+4); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~", i+4); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
                         }
 
                         if(line.substr(i+1, 3) == "en>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].en_commentary.size() < 4) en_Commentary.push_back(line.substr(i+4,next_terminator-4 - i)); //ensure there is no more commentary than 3
+                            if(en_Commentary.size() < 4) en_Commentary.push_back(line.substr(i+4,next_terminator-4 - i)); //ensure there is no more commentary than 3
                         }
                         else if(line.substr(i+1, 3) == "jp>"){ //check if rest of sequency is japanese or english
-                            if(prompt[prompt.size()-1].jp_commentary.size() < 4) jp_Commentary.push_back(line.substr(i+4,next_terminator-4 - i));
+                            if(jp_Commentary.size() < 4) jp_Commentary.push_back(line.substr(i+4,next_terminator-4 - i));
                         }
                         else{
                             std::cerr<<"< this is not correct usage syntax"<<line.substr(i, 4)<<std::endl;
@@ -365,7 +352,7 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
                 case '$':{
                     if(i+3 < line.size() && line[i+3] == '$'){ //ensure rest of operator @en: or @jp: is not out of bounds, after @ are 3 more characters
-                        next_terminator = line.find_first_of(";|#@<$~\n", i+4); //find next terminator to determine length
+                        next_terminator = line.find_first_of(";|#@<$~", i+4); //find next terminator to determine length
 
                         if (next_terminator == std::string::npos) { //if no terminator found, use end of line
                             next_terminator = line.length();
@@ -403,9 +390,11 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
             }
         }
+        std::cout<<"ding"<<std::endl;
         skip_line: //do absolutely nothing, just skip the line
     }
 
+    std::cout<<"digesing went well"<<std::endl;
     return true;
 }
 
@@ -716,7 +705,7 @@ bool SQLIndexer::write_SQL() {
     auto insertIntoTable_word = [&db, &insert_success](const uint8_t languageIndex, const QString& tableName, const user& entry) {
         if (entry.word_id == -1) return false; // Skip empty entries, though none should be empty
 
-        // After preparing the query but before executing it:
+        /* After preparing the query but before executing it:
         std::cout << "Attempting to insert into " << tableName.toStdString()
                   << " word_id: " << entry.word_id
                   << " type: " << entry.type
@@ -724,6 +713,7 @@ bool SQLIndexer::write_SQL() {
                   << " word: " << entry.word_array[languageIndex].first
                   << " meaning: " << static_cast<int>(entry.word_array[languageIndex].meaning)
                   << std::endl;
+        */
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
@@ -748,7 +738,7 @@ bool SQLIndexer::write_SQL() {
         //skip empty or uninitialized entries
         if (entry.word_id == -1 || (entry.en_usage == "" && entry.jp_usage == "" && entry.en_commentary[0] == "" && entry.jp_commentary[0] == "")) return false; //just checking, but seriously if this happens, something is very wrong
 
-        // After preparing the query but before executing it:
+        /* After preparing the query but before executing it:
         std::cout << "INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) VALUES (" //output to make sure
                   << entry.word_id << ","
                   << "'" << entry.en_usage << "',"
@@ -760,6 +750,7 @@ bool SQLIndexer::write_SQL() {
                   << "'" << entry.jp_commentary[1] << "',"
                   << "'" << entry.jp_commentary[2] << "'"
                   << ")" << std::endl;
+        */
 
         QSqlQuery query(db);
 
@@ -800,13 +791,14 @@ bool SQLIndexer::write_SQL() {
         //skip empty or uninitialized entries
         if (word_ID == -1 || (audio_path.first == "")) return false; //just checking, but seriously if this happens, something is very wrong
 
-        // After preparing the query but before executing it:
+        /* After preparing the query but before executing it:
         std::cout << "INSERT INTO lore_keeper (word_id, path, meaning) VALUES (" //output to make sure
                   << word_ID << ","
                   << "'" << audio_path.first << "',"
                   << "'" << audio_path.meaning << "',"
 
                   << ")" << std::endl;
+        */
 
         QSqlQuery query(db);
 

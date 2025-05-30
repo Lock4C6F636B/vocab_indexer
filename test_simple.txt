@@ -1,0 +1,32 @@
+//Basic word entry with all four languages
+cat;neko;ねこ;猫 #1,noun,25~
+
+//Multiple meanings using pipe separator
+dog|puppy;inu;いぬ;犬 #1,noun,25~
+
+//Word with usage examples
+study;benkyou;べんきょう;勉強 #5,verb,15 @en:I study Japanese every day @jp:毎日日本語を勉強します~
+
+//Word with commentary
+water;mizu;みず;水 #1,noun,28 <en>Essential for life <jp>生命に不可欠~
+
+//Word with audio paths
+hello;konnichiwa;こんにちは;今日は #0,mixed,1 $en$/audio/en/hello.mp3 $jp$/audio/jp/konnichiwa.mp3~
+
+//Complex entry with everything
+beautiful;utsukushii;うつくしい;美しい #2,adjective,14 @en:She is very beautiful @jp:彼女はとても美しいです <en>Describes aesthetic appeal <en>Often used for nature <jp>自然によく使われる $en$/audio/en/beautiful.mp3 $jp$/audio/jp/utsukushii.mp3~
+
+//Multiple alternatives in different languages
+thank you|thanks;arigatou|doumo;ありがとう|どうも;有難う|どうも #0,mixed,2~
+
+//Adjective with multiple forms
+good|nice|fine;ii|yoi;いい|よい;良い #2,adjective,6~
+
+//Verb with te-form usage
+eat;taberu;たべる;食べる #5,verb,5 @en:Let's eat together @jp:一緒に食べましょう~
+
+//Comment line - this should be ignored
+//house;ie;いえ;家 #1,noun,6~
+
+//Number entry
+one;ichi;いち;一 #4,number,11~
