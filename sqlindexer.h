@@ -88,5 +88,7 @@ public:
             std::cout<<""<<std::endl; //better flush
         }
     }
+
+    void show_tables() const noexcept;
 };
 

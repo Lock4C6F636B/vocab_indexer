@@ -6,9 +6,7 @@ int main(int argc, char *argv[]){
     QCoreApplication app(argc, argv);
     SQLIndexer sql_indexer;
 
-    if(sql_indexer.process()){
-        std::cout<<"process went well"<<std::endl;
-    } else std::cout<<"FOOOL!!"<<std::endl;
+    sql_indexer.process();
 
     return app.exec();
 }

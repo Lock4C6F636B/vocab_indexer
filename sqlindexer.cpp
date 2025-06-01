@@ -149,10 +149,12 @@ bool SQLIndexer::process() noexcept{
         std::getline(std::cin, prompt);
     }
 
-
+    show_tables();
 
     if(digest_input(prompt)){
+        std::cout<<"\ndigested"<<std::endl;
         choose_id();
+        std::cout<<"\nid choosen"<<std::endl;
         show_prompt();
 
         char decision;
@@ -453,30 +455,34 @@ unsigned int SQLIndexer::choose_id() noexcept {
     };
 
     auto assign_audio_mean_from_table = [this](user &line){ //find if and where word occures
-        ///english
         uint8_t high_mean = 0;
-        for(const audio &path: en_audio_crypt){ //find highest meaning
-            if(line.word_id == path.word_id && high_mean < path.meaning ){
-                high_mean = path.meaning;
+        ///english
+        if(!line.en_audio_path.empty()){
+            for(const audio &path: en_audio_crypt){ //find highest meaning
+                if(line.word_id == path.word_id && high_mean < path.meaning ){
+                    high_mean = path.meaning;
+                }
             }
-        }
-        line.en_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
+            line.en_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
 
-        for(uint8_t itr = 1; itr < line.en_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
-            line.en_audio_path[itr].meaning = ++line.en_audio_path[itr-1].meaning;
+            for(uint8_t itr = 1; itr < line.en_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
+                line.en_audio_path[itr].meaning = ++line.en_audio_path[itr-1].meaning;
+            }
         }
 
         //japanese
-        high_mean = 0;
-        for(const audio &path: jp_audio_crypt){ //find highest meaning
-            if(line.word_id == path.word_id && high_mean < path.meaning ){
-                high_mean = path.meaning;
+        if(!line.jp_audio_path.empty()){
+            high_mean = 0;
+            for(const audio &path: jp_audio_crypt){ //find highest meaning
+                if(line.word_id == path.word_id && high_mean < path.meaning ){
+                    high_mean = path.meaning;
+                }
             }
-        }
-        line.jp_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
+            line.jp_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
 
-        for(uint8_t itr = 1; itr < line.jp_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
-            line.jp_audio_path[itr].meaning = ++line.jp_audio_path[itr-1].meaning;
+            for(uint8_t itr = 1; itr < line.jp_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
+                line.jp_audio_path[itr].meaning = ++line.jp_audio_path[itr-1].meaning;
+            }
         }
     };
 
@@ -696,7 +702,7 @@ bool SQLIndexer::write_SQL() {
 
     // Helper function to insert into a specific table
     auto insertIntoTable_word = [&db, &insert_success](const uint8_t languageIndex, const QString& tableName, const user& entry) {
-        if (entry.word_id == -1) return false; // Skip empty entries, though none should be empty
+        if (languageIndex > 3 || entry.word_array[languageIndex].first == "") return false; // Skip empty entries, though none should be empty
 
         /* After preparing the query but before executing it:
         std::cout << "Attempting to insert into " << tableName.toStdString()
@@ -710,7 +716,6 @@ bool SQLIndexer::write_SQL() {
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
-        std::cout<<"INSERT INTO " + tableName.toStdString() + "(word_id, type, type_id, lesson, word, meaning) VALUES ("<<entry.word_id<<","<<entry.type<<","<<static_cast<int>(entry.type_id)<<","<<entry.lesson<<","<<entry.word_array[languageIndex].first<<","<<static_cast<int>(entry.word_array[languageIndex].meaning)<<")"<<std::endl;
 
         query.addBindValue(entry.word_id);
         query.addBindValue(QString::fromStdString(entry.type));
@@ -728,28 +733,15 @@ bool SQLIndexer::write_SQL() {
     };
 
     auto insertIntoTable_add_lore = [&db, &insert_success](const user& entry) {
-        //skip empty or uninitialized entries
-        if (entry.word_id == -1 || (entry.en_usage == "" && entry.jp_usage == "" && entry.en_commentary[0] == "" && entry.jp_commentary[0] == "")) return false; //just checking, but seriously if this happens, something is very wrong
-
-        /* After preparing the query but before executing it:
-        std::cout << "INSERT INTO lore_keeper (word_id, en_usage, jp_usage, en_commentary_1, en_commentary_2, en_commentary_3, jp_commentary_1, jp_commentary_2, jp_commentary_3) VALUES (" //output to make sure
-                  << entry.word_id << ","
-                  << "'" << entry.en_usage << "',"
-                  << "'" << entry.jp_usage << "',"
-                  << "'" << entry.en_commentary[0] << "',"
-                  << "'" << entry.en_commentary[1] << "',"
-                  << "'" << entry.en_commentary[2] << "',"
-                  << "'" << entry.jp_commentary[0] << "',"
-                  << "'" << entry.jp_commentary[1] << "',"
-                  << "'" << entry.jp_commentary[2] << "'"
-                  << ")" << std::endl;
-        */
-
         QSqlQuery query(db);
 
         //insert word_id alone first
         query.prepare("INSERT INTO lore_keeper (word_id) " "VALUES (?)");
         query.addBindValue(entry.word_id);
+        if (!query.exec()) {
+            qDebug() << "Error inserting into lore_keeper:" << query.lastError().text();
+            return false;
+        }
 
         //lambda to parse ooptional values
         auto add_optional_element = [&query, &insert_success, &word_id = entry.word_id](const std::string element_name, const std::string &value){
@@ -764,26 +756,20 @@ bool SQLIndexer::write_SQL() {
 
         //insert only if not empty
         if(entry.en_usage != "") add_optional_element("en_usage", entry.en_usage);
-        if(entry.en_usage != "") add_optional_element("jp_usage", entry.jp_usage);
-        if(entry.en_usage != "") add_optional_element("en_commentary_1",entry.en_commentary[0]);
-        if(entry.en_usage != "") add_optional_element("en_commentary_2",entry.en_commentary[1]);
-        if(entry.en_usage != "") add_optional_element("en_commentary_3",entry.en_commentary[2]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_1",entry.jp_commentary[0]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_2",entry.jp_commentary[1]);
-        if(entry.en_usage != "") add_optional_element("jp_commentary_3",entry.jp_commentary[2]);
+        if(entry.jp_usage != "") add_optional_element("jp_usage", entry.jp_usage);
+        if(entry.en_commentary[0] != "") add_optional_element("en_commentary_1",entry.en_commentary[0]);
+        if(entry.en_commentary[1] != "") add_optional_element("en_commentary_2",entry.en_commentary[1]);
+        if(entry.en_commentary[2] != "") add_optional_element("en_commentary_3",entry.en_commentary[2]);
+        if(entry.jp_commentary[0] != "") add_optional_element("jp_commentary_1",entry.jp_commentary[0]);
+        if(entry.jp_commentary[1] != "") add_optional_element("jp_commentary_2",entry.jp_commentary[1]);
+        if(entry.jp_commentary[2] != "") add_optional_element("jp_commentary_3",entry.jp_commentary[2]);
 
-        if (!query.exec()) {
-            qDebug() << "Error inserting into lore_keeper:" << query.lastError().text();
-            return false;
-        }
+        std::cout<<"ending lore for "<<entry.word_array[0].first<<std::endl;
 
         return true;
     };
 
     auto insertIntoTable_add_audio = [&db, &insert_success](const QString& tableName, const dual &audio_path, const unsigned &word_ID) {
-        //skip empty or uninitialized entries
-        if (word_ID == -1 || (audio_path.first == "")) return false; //just checking, but seriously if this happens, something is very wrong
-
         /* After preparing the query but before executing it:
         std::cout << "INSERT INTO lore_keeper (word_id, path, meaning) VALUES (" //output to make sure
                   << word_ID << ","
@@ -811,6 +797,8 @@ bool SQLIndexer::write_SQL() {
     // Process each entry
     for (size_t i = 0; i < prompt.size(); ++i) {
         // Insert into each table if the corresponding field is not empty
+        if(prompt[i].word_id == -1) goto skip_entry;
+
         //english
         if(!is_redundant_word(0,i)){ //insert only if the word not already included in table
             insert_success = insertIntoTable_word(0, "english", prompt[i]);
@@ -844,16 +832,17 @@ bool SQLIndexer::write_SQL() {
         }
 
         //lore_keeper
-        if(!is_redundant_lore(i)){ //insert only if the word not already included in table
+        if(!is_redundant_lore(i) && (prompt[i].en_usage != "" || prompt[i].jp_usage != "" || prompt[i].en_commentary[0] != "" || prompt[i].jp_commentary[0] != "")){ //insert only if the word not already included in table
             insert_success = insertIntoTable_add_lore(prompt[i]);
             if(!insert_success){ //attempt insertion into english, if fail end the function
+                std::cout<<"yolo"<<std::endl;
                 break;
             }
         }
 
         //en voice_crypt
         for(uint8_t itr = 0; itr < prompt[i].en_audio_path.size(); itr++){
-            if(!is_redundant_audio(0, i, itr)){ //insert only if the word not already included in table
+            if(!is_redundant_audio(0, i, itr) && prompt[i].en_audio_path[itr].first != ""){ //insert only if the word not already included in table or empty
                 insert_success = insertIntoTable_add_audio("en_audio_crypt", prompt[i].en_audio_path[itr], prompt[i].word_id);
                 if(!insert_success){ //attempt insertion into english, if fail end the function
                     break;
@@ -863,13 +852,15 @@ bool SQLIndexer::write_SQL() {
 
         //jp voice_crypt
         for(uint8_t itr = 0; itr < prompt[i].jp_audio_path.size(); itr++){
-            if(!is_redundant_audio(0, i, itr)){ //insert only if the word not already included in table
+            if(!is_redundant_audio(0, i, itr) && prompt[i].jp_audio_path[itr].first != ""){ //insert only if the word not already included in table or empty
                 insert_success = insertIntoTable_add_audio("jp_audio_crypt", prompt[i].jp_audio_path[itr], prompt[i].word_id);
                 if(!insert_success){ //attempt insertion into english, if fail end the function
                     break;
                 }
             }
         }
+
+        skip_entry:
     }
 
     if(insert_success){
@@ -880,4 +871,69 @@ bool SQLIndexer::write_SQL() {
     db.close();
     std::cout<<"closed database"<<std::endl;
     return true;
+}
+
+
+void SQLIndexer::show_tables() const noexcept {
+    std::cout << "\n=== DEBUG: LOADED DATA FROM DATABASE ===" << std::endl;
+
+    // English table
+    std::cout << "\n--- ENGLISH TABLE (" << english.size() << " entries) ---" << std::endl;
+    for (const auto& e : english) {
+        std::cout << "ID:" << e.word_id << " Type:" << static_cast<int>(e.type_id)
+        << " Lesson:" << e.lesson << " Meaning:" << static_cast<int>(e.meaning)
+        << " Word:\"" << e.word << "\"" << std::endl;
+    }
+
+    // Romanji table
+    std::cout << "\n--- ROMANJI TABLE (" << romanji.size() << " entries) ---" << std::endl;
+    for (const auto& e : romanji) {
+        std::cout << "ID:" << e.word_id << " Type:" << static_cast<int>(e.type_id)
+        << " Lesson:" << e.lesson << " Meaning:" << static_cast<int>(e.meaning)
+        << " Word:\"" << e.word << "\"" << std::endl;
+    }
+
+    // Japanese table
+    std::cout << "\n--- JAPANESE TABLE (" << japanese.size() << " entries) ---" << std::endl;
+    for (const auto& e : japanese) {
+        std::cout << "ID:" << e.word_id << " Type:" << static_cast<int>(e.type_id)
+        << " Lesson:" << e.lesson << " Meaning:" << static_cast<int>(e.meaning)
+        << " Word:\"" << e.word << "\"" << std::endl;
+    }
+
+    // Full Japanese table
+    std::cout << "\n--- FULL_JAPANESE TABLE (" << full_japanese.size() << " entries) ---" << std::endl;
+    for (const auto& e : full_japanese) {
+        std::cout << "ID:" << e.word_id << " Type:" << static_cast<int>(e.type_id)
+        << " Lesson:" << e.lesson << " Meaning:" << static_cast<int>(e.meaning)
+        << " Word:\"" << e.word << "\"" << std::endl;
+    }
+
+    // Lore keeper table
+    std::cout << "\n--- LORE_KEEPER TABLE (" << lore_keeper.size() << " entries) ---" << std::endl;
+    for (const auto& l : lore_keeper) {
+        std::cout << "ID:" << l.word_id << std::endl;
+        std::cout << "  EN_Usage: \"" << l.en_usage << "\"" << std::endl;
+        std::cout << "  JP_Usage: \"" << l.jp_usage << "\"" << std::endl;
+        std::cout << "  EN_Comments: [\"" << l.en_commentary[0] << "\", \""
+                  << l.en_commentary[1] << "\", \"" << l.en_commentary[2] << "\"]" << std::endl;
+        std::cout << "  JP_Comments: [\"" << l.jp_commentary[0] << "\", \""
+                  << l.jp_commentary[1] << "\", \"" << l.jp_commentary[2] << "\"]" << std::endl;
+    }
+
+    // English audio
+    std::cout << "\n--- EN_AUDIO_CRYPT TABLE (" << en_audio_crypt.size() << " entries) ---" << std::endl;
+    for (const auto& a : en_audio_crypt) {
+        std::cout << "ID:" << a.word_id << " Meaning:" << static_cast<int>(a.meaning)
+        << " Path:\"" << a.path << "\"" << std::endl;
+    }
+
+    // Japanese audio
+    std::cout << "\n--- JP_AUDIO_CRYPT TABLE (" << jp_audio_crypt.size() << " entries) ---" << std::endl;
+    for (const auto& a : jp_audio_crypt) {
+        std::cout << "ID:" << a.word_id << " Meaning:" << static_cast<int>(a.meaning)
+        << " Path:\"" << a.path << "\"" << std::endl;
+    }
+
+    std::cout << "\n=== END DEBUG OUTPUT ===" << std::endl;
 }
