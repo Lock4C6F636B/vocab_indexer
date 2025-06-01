@@ -232,11 +232,6 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
         }
     }
 
-    std::cout<<"got to debugging lines"<<std::endl;
-    for(auto line:lines){
-        std::cout<<line<<std::endl;
-    }
-
     //set variables for digesting input
     std::array<char,8> terminators = {';','|','#',',','~','@','<','$'};
 
@@ -390,11 +385,9 @@ bool SQLIndexer::digest_input(std::string &input) noexcept {
                 }
             }
         }
-        std::cout<<"ding"<<std::endl;
         skip_line: //do absolutely nothing, just skip the line
     }
 
-    std::cout<<"digesing went well"<<std::endl;
     return true;
 }
 

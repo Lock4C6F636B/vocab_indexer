@@ -35,14 +35,6 @@ public:
         std::cout<<"starting show: \n"<<std::endl;
 
         for(const user &useru : prompt){
-            auto commentary =[](const std::array<std::string,3> &comments){
-                std::cout<<"commentary: ";
-                for(const std::string &comment : comments){
-                    std::cout<<comment<<" | ";
-                }
-                std::cout<<"  ";
-            };
-
             for(uint8_t i = 0; i < useru.word_array.size(); i++){
                 switch(i){
                     case 0:
@@ -68,19 +60,32 @@ public:
 
             //optional data
             //lore
+            //usage
             std::cout<<"en usage: "<<useru.en_usage<<" | jp usage: "<<useru.jp_usage<<std::endl;
-            commentary(useru.en_commentary);
-            commentary(useru.jp_commentary);
-            std::cout<<""<<std::endl;
+
+            //commentary
+            std::cout<<"en_commentary: ";
+            for(const std::string &comment : useru.en_commentary){
+                std::cout<<comment<<" | ";
+            }
+            std::cout<<"\n";
+
+            std::cout<<"jp_commentary: ";
+            for(const std::string &comment : useru.jp_commentary){
+                std::cout<<comment<<" | ";
+            }
+            std::cout<<"\n";
 
             //audio
             for(const dual &audio_path : useru.en_audio_path){
-                std::cout<<"\nen audio path: "<<audio_path.first<<" meaning: "<<audio_path.meaning;
+                std::cout<<"en audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
             }
-            std::cout<<'\n';
+
             for(const dual &audio_path : useru.jp_audio_path){
-                std::cout<<"\en audio path: "<<audio_path.first<<" meaning: "<<audio_path.meaning;;
+                std::cout<<"jp audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
             }
+
+            std::cout<<""<<std::endl; //better flush
         }
     }
 };

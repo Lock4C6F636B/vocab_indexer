@@ -13,11 +13,18 @@
 
 struct dual{
     std::string first;
-    uint8_t meaning;
+    uint8_t meaning = 0; //inconceivable! uint8_t has no default type and grabs anything that just happens to be in memory
+    //how many more lies i have been told by jedi council? types inherited from c don't have default constructors, therefore no default values
 
     dual() = default;
     dual(const std::string &First):first(First){}
     dual(const std::string_view &First):first(First){}
+
+    // Overloaded operator
+    friend std::ostream& operator<<(std::ostream& os, const dual& d) {
+        os << d.first << " meaning: " << static_cast<int>(d.meaning);
+        return os;
+    }
 };
 
 struct base_element {
@@ -95,8 +102,6 @@ struct user{
         for(uint8_t i = 0; i < Jp_Audio_Path.size(); i++){
             jp_audio_path.push_back(Jp_Audio_Path[i]);
         }
-
-        std::cout<<"\n";
     }
 
     uint8_t get_mean(uint8_t language){ //returning meaning in this language
