@@ -31,63 +31,7 @@ public:
 
     unsigned int choose_id() noexcept;
 
-    inline void show_prompt() const noexcept {
-        std::cout<<"starting show: \n"<<std::endl;
-
-        for(const user &useru : prompt){
-            for(uint8_t i = 0; i < useru.word_array.size(); i++){
-                switch(i){
-                    case 0:
-                        std::cout<<"english: ";
-                        break;
-                    case 1:
-                        std::cout<<"romanji: ";
-                        break;
-                    case 2:
-                        std::cout<<"japanese: ";
-                        break;
-                    case 3:
-                        std::cout<<"full japanese: ";
-                        break;
-                }
-                 std::cout<<useru[i]<<" meaning: "<< static_cast<int>(useru.word_array[i].meaning)<<std::endl; //print word + meaning
-            }
-
-            std::cout<<"word_id: "<<useru.word_id<<std::endl;
-            std::cout<<"type_id: "<< static_cast<int>(useru.type_id) << std::endl;
-            std::cout<<"type: "<<useru.type<<std::endl;
-            std::cout<<"lesson: "<<useru.lesson<<std::endl;
-
-            //optional data
-            //lore
-            //usage
-            std::cout<<"en usage: "<<useru.en_usage<<" | jp usage: "<<useru.jp_usage<<std::endl;
-
-            //commentary
-            std::cout<<"en_commentary: ";
-            for(const std::string &comment : useru.en_commentary){
-                std::cout<<comment<<" | ";
-            }
-            std::cout<<"\n";
-
-            std::cout<<"jp_commentary: ";
-            for(const std::string &comment : useru.jp_commentary){
-                std::cout<<comment<<" | ";
-            }
-            std::cout<<"\n";
-
-            //audio
-            for(const dual &audio_path : useru.en_audio_path){
-                std::cout<<"en audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
-            }
-
-            for(const dual &audio_path : useru.jp_audio_path){
-                std::cout<<"jp audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
-            }
-
-            std::cout<<""<<std::endl; //better flush
-        }
-    }
+    void show_prompt() const noexcept;
 
     void show_tables() const noexcept;
 };

@@ -124,6 +124,7 @@ bool SQLIndexer::process() noexcept{
     //clear input buffer - use ignore instead of clear
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
+    //file or terminator input user choice
     if(terminal_file == 'y' or terminal_file == 'Y'){
         std::cout << "Enter the prompt of filepath: ";
         filepath = "/home/kasumi/programming/c++/vocab_indexer/test_simple.txt";
@@ -149,13 +150,14 @@ bool SQLIndexer::process() noexcept{
         std::getline(std::cin, prompt);
     }
 
-    show_tables();
+    show_tables();//optional output
 
+
+    //here we lift thine burden
     if(digest_input(prompt)){
-        std::cout<<"\ndigested"<<std::endl;
         choose_id();
-        std::cout<<"\nid choosen"<<std::endl;
-        show_prompt();
+
+        show_prompt(); //optional output
 
         char decision;
         do {
@@ -503,6 +505,7 @@ unsigned int SQLIndexer::choose_id() noexcept {
                 high_mean = word.word_array[0].meaning;
             }
         }
+        std::cout<<"for word: "<<line.word_array[0].first<<"meaning: "<<static_cast<int>(line.word_array[0].meaning)<<" , highest mean "<<static_cast<int>(high_mean)<<std::endl;
         line.word_array[0].meaning = ++high_mean; //assign new highest mean
 
         high_mean = 0;
@@ -662,7 +665,7 @@ bool SQLIndexer::write_SQL() {
                 //search prompt until previous entry in audio vector of same user entry
                 for(size_t itr = 0; itr <= currentIndex; itr++) { //run through previous entries in prompt
                     for(size_t i = 0; i < currentInnerIndex; i++){ //run through audio vectors in each prompt entry
-                        if(prompt[currentIndex].en_audio_path[currentInnerIndex].first== prompt[itr].en_audio_path[i].first) {
+                        if(prompt[currentIndex].en_audio_path[currentInnerIndex].first == prompt[itr].en_audio_path[i].first) {
                             return true;
                         }
                     }
@@ -672,7 +675,7 @@ bool SQLIndexer::write_SQL() {
                 //search prompt until previous entry in audio vector of same user entry
                 for(size_t itr = 0; itr <= currentIndex; itr++) { //run through previous entries in prompt
                     for(size_t i = 0; i < currentInnerIndex; i++){ //run through audio vectors in each prompt entry
-                        if(prompt[currentIndex].en_audio_path[currentInnerIndex].first == prompt[itr].jp_audio_path[i].first) {
+                        if(prompt[currentIndex].jp_audio_path[currentInnerIndex].first == prompt[itr].jp_audio_path[i].first) {
                             return true;
                         }
                     }
@@ -689,12 +692,14 @@ bool SQLIndexer::write_SQL() {
                         return true;
                    }
                 }
+                break;
             case 1:
                 for(const audio &path : jp_audio_crypt){
                     if(prompt[currentIndex].jp_audio_path[currentInnerIndex].first == path.path){
                         return true;
                     }
                 }
+                break;
             }
 
             return false;
@@ -703,16 +708,6 @@ bool SQLIndexer::write_SQL() {
     // Helper function to insert into a specific table
     auto insertIntoTable_word = [&db, &insert_success](const uint8_t languageIndex, const QString& tableName, const user& entry) {
         if (languageIndex > 3 || entry.word_array[languageIndex].first == "") return false; // Skip empty entries, though none should be empty
-
-        /* After preparing the query but before executing it:
-        std::cout << "Attempting to insert into " << tableName.toStdString()
-                  << " word_id: " << entry.word_id
-                  << " type: " << entry.type
-                  << " type: " << static_cast<int>(entry.type_id)
-                  << " word: " << entry.word_array[languageIndex].first
-                  << " meaning: " << static_cast<int>(entry.word_array[languageIndex].meaning)
-                  << std::endl;
-        */
 
         QSqlQuery query(db);
         query.prepare("INSERT INTO " + tableName + " (word_id, type, type_id, lesson, word, meaning) " "VALUES (?, ?, ?, ?, ?, ?)");
@@ -728,6 +723,14 @@ bool SQLIndexer::write_SQL() {
             qDebug() << "Error inserting into" << tableName << ":" << query.lastError().text();
             return false;
         }
+
+
+        // Clean output formatting
+        std::cout << "[" << tableName.toStdString() << "] ";
+        std::cout << "ID:" << entry.word_id << " ";
+        std::cout << "Word:\"" << entry.word_array[languageIndex].first << "\" ";
+        std::cout << "Meaning:" << static_cast<int>(entry.word_array[languageIndex].meaning);
+        std::cout << "\n";
 
         return true;
     };
@@ -764,21 +767,25 @@ bool SQLIndexer::write_SQL() {
         if(entry.jp_commentary[1] != "") add_optional_element("jp_commentary_2",entry.jp_commentary[1]);
         if(entry.jp_commentary[2] != "") add_optional_element("jp_commentary_3",entry.jp_commentary[2]);
 
-        std::cout<<"ending lore for "<<entry.word_array[0].first<<std::endl;
+
+        // Clean output formatting
+        std::cout << "[LORE_KEEPER] ";
+        std::cout << "ID:" << entry.word_id << " ";
+        if(entry.en_usage != "") std::cout << "EN_Usage:\"" << entry.en_usage << "\" ";
+        if(entry.jp_usage != "") std::cout << "JP_Usage:\"" << entry.jp_usage << "\" ";
+
+        // Show commentary count instead of full text to keep it clean
+        int en_comments = 0, jp_comments = 0;
+        for(const auto& comment : entry.en_commentary) if(!comment.empty()) en_comments++;
+        for(const auto& comment : entry.jp_commentary) if(!comment.empty()) jp_comments++;
+        if(en_comments > 0) std::cout << "EN_Comments:" << en_comments << " ";
+        if(jp_comments > 0) std::cout << "JP_Comments:" << jp_comments << " ";
+        std::cout << "\n";
 
         return true;
     };
 
     auto insertIntoTable_add_audio = [&db, &insert_success](const QString& tableName, const dual &audio_path, const unsigned &word_ID) {
-        /* After preparing the query but before executing it:
-        std::cout << "INSERT INTO lore_keeper (word_id, path, meaning) VALUES (" //output to make sure
-                  << word_ID << ","
-                  << "'" << audio_path.first << "',"
-                  << "'" << audio_path.meaning << "',"
-
-                  << ")" << std::endl;
-        */
-
         QSqlQuery query(db);
 
         query.prepare("INSERT INTO " + tableName + " (word_id, path, meaning) " "VALUES (?, ?, ?)");
@@ -790,6 +797,15 @@ bool SQLIndexer::write_SQL() {
             qDebug() << "Error inserting into " + tableName + ":" << query.lastError().text();
             return false;
         }
+
+
+        //Clean output formatting
+        std::cout << "[" << tableName.toStdString() << "] ";
+        std::cout << "ID:" << word_ID << " ";
+        std::cout << "Path:\"" << audio_path.first << "\" ";
+        std::cout << "Meaning:" << static_cast<int>(audio_path.meaning);
+        std::cout << "\n";
+
 
         return true;
     };
@@ -807,6 +823,7 @@ bool SQLIndexer::write_SQL() {
             }
         }
 
+
         //romanji
         if(!is_redundant_word(1,i)){ //insert only if the word not already included in table
             insert_success = insertIntoTable_word(1, "romanji", prompt[i]);
@@ -814,6 +831,7 @@ bool SQLIndexer::write_SQL() {
                 break;
             }
         }
+
 
         //japanese
         if(!is_redundant_word(2,i)){ //insert only if the word not already included in table
@@ -823,6 +841,7 @@ bool SQLIndexer::write_SQL() {
             }
         }
 
+
         //full_japanese
         if(!is_redundant_word(3,i)){ //insert only if the word not already included in table
             insert_success = insertIntoTable_word(3, "full_japanese", prompt[i]);
@@ -831,11 +850,11 @@ bool SQLIndexer::write_SQL() {
             }
         }
 
+
         //lore_keeper
         if(!is_redundant_lore(i) && (prompt[i].en_usage != "" || prompt[i].jp_usage != "" || prompt[i].en_commentary[0] != "" || prompt[i].jp_commentary[0] != "")){ //insert only if the word not already included in table
             insert_success = insertIntoTable_add_lore(prompt[i]);
             if(!insert_success){ //attempt insertion into english, if fail end the function
-                std::cout<<"yolo"<<std::endl;
                 break;
             }
         }
@@ -852,7 +871,7 @@ bool SQLIndexer::write_SQL() {
 
         //jp voice_crypt
         for(uint8_t itr = 0; itr < prompt[i].jp_audio_path.size(); itr++){
-            if(!is_redundant_audio(0, i, itr) && prompt[i].jp_audio_path[itr].first != ""){ //insert only if the word not already included in table or empty
+            if(!is_redundant_audio(1, i, itr) && prompt[i].jp_audio_path[itr].first != ""){ //insert only if the word not already included in table or empty
                 insert_success = insertIntoTable_add_audio("jp_audio_crypt", prompt[i].jp_audio_path[itr], prompt[i].word_id);
                 if(!insert_success){ //attempt insertion into english, if fail end the function
                     break;
@@ -936,4 +955,62 @@ void SQLIndexer::show_tables() const noexcept {
     }
 
     std::cout << "\n=== END DEBUG OUTPUT ===" << std::endl;
+}
+
+void SQLIndexer::show_prompt() const noexcept {
+    std::cout<<"starting show: \n"<<std::endl;
+
+    for(const user &useru : prompt){
+        for(uint8_t i = 0; i < useru.word_array.size(); i++){
+            switch(i){
+            case 0:
+                std::cout<<"english: ";
+                break;
+            case 1:
+                std::cout<<"romanji: ";
+                break;
+            case 2:
+                std::cout<<"japanese: ";
+                break;
+            case 3:
+                std::cout<<"full japanese: ";
+                break;
+            }
+            std::cout<<useru[i]<<" meaning: "<< static_cast<int>(useru.word_array[i].meaning)<<std::endl; //print word + meaning
+        }
+
+        std::cout<<"word_id: "<<useru.word_id<<std::endl;
+        std::cout<<"type_id: "<< static_cast<int>(useru.type_id) << std::endl;
+        std::cout<<"type: "<<useru.type<<std::endl;
+        std::cout<<"lesson: "<<useru.lesson<<std::endl;
+
+        //optional data
+        //lore
+        //usage
+        std::cout<<"en usage: "<<useru.en_usage<<" | jp usage: "<<useru.jp_usage<<std::endl;
+
+        //commentary
+        std::cout<<"en_commentary: ";
+        for(const std::string &comment : useru.en_commentary){
+            std::cout<<comment<<" | ";
+        }
+        std::cout<<"\n";
+
+        std::cout<<"jp_commentary: ";
+        for(const std::string &comment : useru.jp_commentary){
+            std::cout<<comment<<" | ";
+        }
+        std::cout<<"\n";
+
+        //audio
+        for(const dual &audio_path : useru.en_audio_path){
+            std::cout<<"en audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
+        }
+
+        for(const dual &audio_path : useru.jp_audio_path){
+            std::cout<<"jp audio path: "<<audio_path.first<<" meaning: "<<static_cast<int>(audio_path.meaning)<<"\n";
+        }
+
+        std::cout<<""<<std::endl; //better flush
+    }
 }

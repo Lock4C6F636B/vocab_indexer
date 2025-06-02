@@ -1,0 +1,2 @@
+1. option to show data inserted into tables..
+2. option to print out entire output
