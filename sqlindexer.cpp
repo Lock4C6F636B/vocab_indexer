@@ -423,67 +423,46 @@ unsigned int SQLIndexer::choose_id() noexcept {
     };
 
     auto assign_mean_from_table = [this](user &line){ //find if and where word occures
-            uint8_t high_mean = 0;
-            for(const base_element &e: english){ //find highest meaning
-                if(line.word_id == e.word_id && high_mean < e.meaning){
-                        high_mean = e.meaning;
-                }
+        for(int lang = 0; lang < 4; lang++) {
+            // Check the appropriate table for this language
+            const std::vector<base_element> *table = nullptr;
+            switch(lang) {
+            case 0: table = &english; break;
+            case 1: table = &romanji; break;
+            case 2: table = &japanese; break;
+            case 3: table = &full_japanese; break;
             }
-            line.word_array[0].meaning = ++high_mean; //assign new highest meaning to
 
-            high_mean = 0; //reset high mean
-            for(const base_element &e: romanji){ //find highest meaning
-                if(line.word_id == e.word_id && high_mean < e.meaning){
-                        high_mean = e.meaning;
+            for(const base_element &e: *table){ //find highest meaning
+                if(line.word_id == e.word_id && line[lang] != e.word && line.word_array[lang].meaning < e.meaning){ //only if meaning is no already higher, standardly it should be explicitely 0
+                        line.word_array[lang].meaning = e.meaning+1; //increment by one, work around to maintain const, wouldn't want to accientaly modify something
                 }
             }
-            line.word_array[1].meaning = ++high_mean; //assign new highest meaning to
-
-            high_mean = 0; //reset high mean
-            for(const base_element &e: japanese){ //find highest meaning
-                if(line.word_id == e.word_id && high_mean < e.meaning){
-                        high_mean = e.meaning;
-                }
-            }
-            line.word_array[2].meaning = ++high_mean; //assign new highest meaning to
-
-            high_mean = 0; //reset high mean
-            for(const base_element &e: full_japanese){ //find highest meaning
-                if(line.word_id == e.word_id && high_mean < e.meaning){
-                        high_mean = e.meaning;
-                }
-            }
-            line.word_array[3].meaning = ++high_mean; //assign new highest meaning to
+        }
     };
 
     auto assign_audio_mean_from_table = [this](user &line){ //find if and where word occures
-        uint8_t high_mean = 0;
-        ///english
-        if(!line.en_audio_path.empty()){
-            for(const audio &path: en_audio_crypt){ //find highest meaning
-                if(line.word_id == path.word_id && high_mean < path.meaning ){
-                    high_mean = path.meaning;
+        for(int lang = 0; lang < 2; lang++) {
+            // Check the appropriate table for this language
+            const std::vector<audio> *table = nullptr;
+            switch(lang) {
+            case 0: table = &en_audio_crypt; break;
+            case 1: table = &jp_audio_crypt; break;
+            }
+
+            std::vector<dual> *lineo = nullptr;
+            switch(lang) {
+            case 0: lineo = &line.en_audio_path; break;
+            case 1: lineo = &line.jp_audio_path; break;
+            }
+
+            for(const audio &path: *table){ //find highest meaning
+                for(dual &entry : *lineo){
+                    if(line.word_id == path.word_id && entry.first != path.path && entry.meaning < path.meaning ){
+                        entry.meaning = path.meaning+1;
+                    }
                 }
-            }
-            line.en_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
 
-            for(uint8_t itr = 1; itr < line.en_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
-                line.en_audio_path[itr].meaning = ++line.en_audio_path[itr-1].meaning;
-            }
-        }
-
-        //japanese
-        if(!line.jp_audio_path.empty()){
-            high_mean = 0;
-            for(const audio &path: jp_audio_crypt){ //find highest meaning
-                if(line.word_id == path.word_id && high_mean < path.meaning ){
-                    high_mean = path.meaning;
-                }
-            }
-            line.jp_audio_path[0].meaning = ++high_mean; //assign new highest meaning to to first
-
-            for(uint8_t itr = 1; itr < line.jp_audio_path.size(); itr++){ //after finding first meaning, just increment rest from it
-                line.jp_audio_path[itr].meaning = ++line.jp_audio_path[itr-1].meaning;
             }
         }
     };
@@ -499,52 +478,31 @@ unsigned int SQLIndexer::choose_id() noexcept {
     };
 
     auto assign_mean_from_prompt = [this](user &line){
-        uint8_t high_mean = 0;
-        for(const user &word : prompt){ //search through english part of prompt
-            if(line.word_id == word.word_id && high_mean < word.word_array[0].meaning){ //
-                high_mean = word.word_array[0].meaning;
+        for(int lang = 0; lang < 4; lang++) {
+            for(const user &entry : prompt){ //search through english part of prompt
+                if(line.word_id == entry.word_id && line[lang] != entry[lang] && line.word_array[lang].meaning < entry.word_array[lang].meaning){ //madness, i say
+                    line.word_array[lang].meaning = entry.word_array[lang].meaning+1;
+                }
             }
         }
-        std::cout<<"for word: "<<line.word_array[0].first<<"meaning: "<<static_cast<int>(line.word_array[0].meaning)<<" , highest mean "<<static_cast<int>(high_mean)<<std::endl;
-        line.word_array[0].meaning = ++high_mean; //assign new highest mean
-
-        high_mean = 0;
-        for(const user &word : prompt){ //search through romanji part of prompt
-            if(line.word_id == word.word_id && high_mean < word.word_array[1].meaning){ //
-                high_mean = word.word_array[1].meaning;
-            }
-        }
-        line.word_array[1].meaning = ++high_mean; //assign new highest mean
-
-        high_mean = 0;
-        for(const user &word : prompt){ //search through j std::cout<<"found match for word_id "<<word.word_id<<std::endl;apanese part of prompt
-            if(line.word_id == word.word_id && high_mean < word.word_array[2].meaning){ //
-                high_mean = word.word_array[2].meaning;
-            }
-        }
-        line.word_array[2].meaning = ++high_mean; //assign new highest mean
-
-        high_mean = 0;
-        for(const user &word : prompt){ //search through romanji part of prompt
-            if(line.word_id == word.word_id && high_mean < word.word_array[3].meaning){ //
-                high_mean = word.word_array[3].meaning;
-            }
-        }
-        line.word_array[3].meaning = ++high_mean; //assign new highest mean
     };
 
     auto assign_audio_mean_from_prompt = [this](user &line){
         for(const user &entry : prompt){ //search through english part of prompt
-            if(line.word_id == entry.word_id){
-                //pressume that previous entry is identical
-                //english
-                for(uint8_t itr = 0; itr < entry.en_audio_path.size();itr++){
-                    line.en_audio_path[itr].meaning = (itr < line.en_audio_path.size())? entry.en_audio_path[itr].meaning : -1; //-1 to signal wrongly accused meaning
+            for(int lang = 0; lang < 4; lang++) {
+                std::vector<dual> *lineo = nullptr;
+                switch(lang) {
+                case 0: lineo = &line.en_audio_path; break;
+                case 1: lineo = &line.jp_audio_path; break;
                 }
 
-                //japanese
-                for(uint8_t itr = 0; itr < entry.jp_audio_path.size();itr++){ //pressume that previous entry is identical
-                    line.jp_audio_path[itr].meaning = (itr < line.jp_audio_path.size())? entry.jp_audio_path[itr].meaning : -1; //-1 to signal wrongly accused meaning
+
+                for(size_t current_index = 0; current_index < lineo->size(); current_index++){ //run through audio_path vector
+                    for(size_t i = 0; i < current_index; i++){ //run through previous entries
+                        if(line.word_id == entry.word_id && (*lineo)[current_index].first != (*lineo)[i].first && (*lineo)[current_index].meaning < (*lineo)[i].meaning){ //compare previous entries in prompt with current
+                            (*lineo)[current_index].meaning = (*lineo)[i].meaning+1;
+                        }
+                    }
                 }
             }
         }
@@ -555,15 +513,15 @@ unsigned int SQLIndexer::choose_id() noexcept {
         //find match in prompt
         found_match = assign_word_id_from_prompt(i);
         if(found_match){
-            assign_mean_from_prompt(prompt[i]);
-            assign_audio_mean_from_prompt(prompt[i]);
+            assign_mean_from_prompt(prompt[i]); //this does not assign new meaning, making everything meaning 0
+            assign_audio_mean_from_prompt(prompt[i]); //this causes run time error
         }
 
         //find match in table, skip in match found in prompt
         if(!found_match){
             found_match = assign_word_id_from_table(english,0,i) | assign_word_id_from_table(romanji,1,i) | assign_word_id_from_table(japanese,2,i) | assign_word_id_from_table(full_japanese,3,i);
             if(found_match){ //assign meaning if match found in table
-                assign_mean_from_table(prompt[i]);
+                assign_mean_from_table(prompt[i]); //we will se, once we load it into table
                 assign_audio_mean_from_table(prompt[i]);
             }
         }
