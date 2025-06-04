@@ -433,9 +433,19 @@ unsigned int SQLIndexer::choose_id() noexcept {
             case 3: table = &full_japanese; break;
             }
 
-            for(const base_element &e: *table){ //find highest meaning
-                if(line.word_id == e.word_id && line[lang] != e.word && line.word_array[lang].meaning < e.meaning){ //only if meaning is no already higher, standardly it should be explicitely 0
-                        line.word_array[lang].meaning = e.meaning+1; //increment by one, work around to maintain const, wouldn't want to accientaly modify something
+            for(size_t i = 0; i < table->size(); i++){ //find highest meaning
+                if(line.word_id == (*table)[i].word_id && line[lang] != (*table)[i].word && line.word_array[lang].meaning <= (*table)[i].meaning){ //only if meaning is no already higher, standardly it should be explicitely 0
+                    bool is_same = false;
+                    for(size_t itr = 0; itr < i; itr++){
+                        if(line[lang] == (*table)[itr].word){
+                            is_same = true;
+                        }
+                    }
+
+                    if(!is_same){
+                        std::cout<<"match found "<<line[lang]<<" meaning "<<line.word_array[lang].meaning<<std::endl;
+                        line.word_array[lang].meaning = (*table)[i].meaning+1; //increment by one, work around to maintain const, wouldn't want to accientaly modify something
+                    }
                 }
             }
         }
@@ -458,7 +468,7 @@ unsigned int SQLIndexer::choose_id() noexcept {
 
             for(const audio &path: *table){ //find highest meaning
                 for(dual &entry : *lineo){
-                    if(line.word_id == path.word_id && entry.first != path.path && entry.meaning < path.meaning ){
+                    if(line.word_id == path.word_id && entry.first != path.path && entry.meaning <= path.meaning ){
                         entry.meaning = path.meaning+1;
                     }
                 }
@@ -467,40 +477,48 @@ unsigned int SQLIndexer::choose_id() noexcept {
         }
     };
 
-    auto assign_word_id_from_prompt = [this](size_t &index) -> bool{ //check if the word is already included in before current index
-        for(size_t itr = 0; itr < index; itr++) {
-            if((prompt[itr].word_id != -1) && (prompt[itr][0] == prompt[index][0]) || (prompt[itr][1] == prompt[index][1]) || (prompt[itr][2] == prompt[index][2]) || (prompt[itr][3] == prompt[index][3])){ //check if one at least one INITIALIZED word in prompt before current index appear
-                prompt[index].word_id = prompt[itr].word_id; //take word_id from matching object before
+    auto assign_word_id_from_prompt = [this](const size_t &current_index) -> bool{ //check if the word is already included in before current index
+        for(size_t itr = 0; itr < current_index; itr++) {
+            if((prompt[itr].word_id != -1) && (prompt[itr][0] == prompt[current_index][0]) || (prompt[itr][1] == prompt[current_index][1]) || (prompt[itr][2] == prompt[current_index][2]) || (prompt[itr][3] == prompt[current_index][3])){ //check if one at least one INITIALIZED word in prompt before current index appear
+                prompt[current_index].word_id = prompt[itr].word_id; //take word_id from matching object before
                 return true;
             }
         }
         return false;
     };
 
-    auto assign_mean_from_prompt = [this](user &line){
+    auto assign_mean_from_prompt = [this](user &line, size_t &current_index){
         for(int lang = 0; lang < 4; lang++) {
-            for(const user &entry : prompt){ //search through english part of prompt
-                if(line.word_id == entry.word_id && line[lang] != entry[lang] && line.word_array[lang].meaning < entry.word_array[lang].meaning){ //madness, i say
-                    line.word_array[lang].meaning = entry.word_array[lang].meaning+1;
+            for(size_t i = 0; i < current_index; i++){ //search through english part of prompt
+                if(line.word_id == prompt[i].word_id && line[lang] != prompt[i][lang] && line.word_array[lang].meaning <= prompt[i].word_array[lang].meaning){ //madness, i say
+                    line.word_array[lang].meaning = prompt[i].word_array[lang].meaning+1;
                 }
             }
         }
     };
 
-    auto assign_audio_mean_from_prompt = [this](user &line){
-        for(const user &entry : prompt){ //search through english part of prompt
-            for(int lang = 0; lang < 4; lang++) {
-                std::vector<dual> *lineo = nullptr;
+    auto assign_audio_mean_from_prompt = [this](user &line, size_t &current_index){
+        for(int lang = 0; lang < 2; lang++) { //run through audio languages (english, japanese)
+            std::vector<dual> *current_crypt = nullptr; //store audio_crypt of current line
+            switch(lang) {
+            case 0: current_crypt = &line.en_audio_path; break;
+            case 1: current_crypt = &line.jp_audio_path; break;
+            }
+
+
+                \
+            for(size_t i = 0; i <= current_index; i++){ //run through user prompt vector, including current index
+                std::vector<dual> *prompt_crypt = nullptr; //store crypt of each prompt entry
                 switch(lang) {
-                case 0: lineo = &line.en_audio_path; break;
-                case 1: lineo = &line.jp_audio_path; break;
+                case 0: prompt_crypt = &line.en_audio_path; break;
+                case 1: prompt_crypt= &line.jp_audio_path; break;
                 }
 
-
-                for(size_t current_index = 0; current_index < lineo->size(); current_index++){ //run through audio_path vector
-                    for(size_t i = 0; i < current_index; i++){ //run through previous entries
-                        if(line.word_id == entry.word_id && (*lineo)[current_index].first != (*lineo)[i].first && (*lineo)[current_index].meaning < (*lineo)[i].meaning){ //compare previous entries in prompt with current
-                            (*lineo)[current_index].meaning = (*lineo)[i].meaning+1;
+                //run trough crypt of prev prompt (up to including crypt of current prompt)
+                for(size_t itr = 0; itr < prompt_crypt->size(); itr++){
+                    for(dual &entry : *current_crypt){
+                        if(line.word_id == prompt[i].word_id && entry.first != (*prompt_crypt)[itr].first && entry.meaning <= (*prompt_crypt)[itr].meaning){ //if word id matches and path does not
+                            entry.meaning = ++(*prompt_crypt)[itr].meaning;
                         }
                     }
                 }
@@ -513,8 +531,8 @@ unsigned int SQLIndexer::choose_id() noexcept {
         //find match in prompt
         found_match = assign_word_id_from_prompt(i);
         if(found_match){
-            assign_mean_from_prompt(prompt[i]); //this does not assign new meaning, making everything meaning 0
-            assign_audio_mean_from_prompt(prompt[i]); //this causes run time error
+            assign_mean_from_prompt(prompt[i], i); //this does not assign new meaning, making everything meaning 0
+            assign_audio_mean_from_prompt(prompt[i], i); //this causes run time error
         }
 
         //find match in table, skip in match found in prompt
