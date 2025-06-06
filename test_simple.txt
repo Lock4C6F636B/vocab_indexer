@@ -11,13 +11,13 @@ study;benkyou;べんきょう;勉強 #5,verb,15 @en:I study Japanese every day @
 water;mizu;みず;水 #1,noun,28 <en>Essential for life <jp>生命に不可欠~
 
 //Word with audio paths
-hello;konnichiwa;こんにちは;今日は #0,mixed,1 $en$/audio/en/hello.mp3 $jp$/audio/jp/konnichiwa.mp3~
+hello|gregorious;konnichiwa;こんにちは;今日は #0,mixed,1 $en$/audio/en/hello.mp3 $jp$/audio/jp/konnichiwa.mp3 $jp$/audio/blahblahbla.uwu~
 
 //Complex entry with everything
 beautiful;utsukushii;うつくしい;美しい #2,adjective,14 @en:She is very beautiful @jp:彼女はとても美しいです <en>Describes aesthetic appeal <en>Often used for nature <jp>自然によく使われる $en$/audio/en/beautiful.mp3 $jp$/audio/jp/utsukushii.mp3~
 
 //Multiple alternatives in different languages
-thank you|thanks;arigatou|doumo;ありがとう|どうも;有難う|どうも #0,mixed,2~
+thank you|thanks|huuman;arigatou|doumo;ありがとう|どうも;有難う|どうも #0,mixed,2~
 
 //Adjective with multiple forms
 good|nice|fine;ii|yoi;いい|よい;良い #2,adjective,6~

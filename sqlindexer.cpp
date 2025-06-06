@@ -443,7 +443,6 @@ unsigned int SQLIndexer::choose_id() noexcept {
                     }
 
                     if(!is_same){
-                        std::cout<<"match found "<<line[lang]<<" meaning "<<line.word_array[lang].meaning<<std::endl;
                         line.word_array[lang].meaning = (*table)[i].meaning+1; //increment by one, work around to maintain const, wouldn't want to accientaly modify something
                     }
                 }
@@ -460,19 +459,27 @@ unsigned int SQLIndexer::choose_id() noexcept {
             case 1: table = &jp_audio_crypt; break;
             }
 
-            std::vector<dual> *lineo = nullptr;
+            std::vector<dual> *user_audio_in = nullptr;
             switch(lang) {
-            case 0: lineo = &line.en_audio_path; break;
-            case 1: lineo = &line.jp_audio_path; break;
+            case 0: user_audio_in = &line.en_audio_path; break;
+            case 1: user_audio_in = &line.jp_audio_path; break;
             }
 
-            for(const audio &path: *table){ //find highest meaning
-                for(dual &entry : *lineo){
-                    if(line.word_id == path.word_id && entry.first != path.path && entry.meaning <= path.meaning ){
-                        entry.meaning = path.meaning+1;
+            for(size_t i = 0; i < table->size(); i++){ //find highest meaning
+                for(dual &entry : *user_audio_in){
+                    if(line.word_id == (*table)[i].word_id && entry.first != (*table)[i].path && entry.meaning <= (*table)[i].meaning ){
+                        bool is_same = false;
+                        for(size_t itr = 0; itr < i; itr++){
+                            if(entry.first == (*table)[itr].path){
+                                is_same = true;
+                            }
+                        }
+
+                        if(!is_same){
+                            entry.meaning = (*table)[i].meaning+1; //increment by one, work around to maintain const, wouldn't want to accientaly modify something
+                        }
                     }
                 }
-
             }
         }
     };
@@ -507,18 +514,26 @@ unsigned int SQLIndexer::choose_id() noexcept {
 
 
                 \
-            for(size_t i = 0; i <= current_index; i++){ //run through user prompt vector, including current index
-                std::vector<dual> *prompt_crypt = nullptr; //store crypt of each prompt entry
+            for(size_t i = 0; i < current_index; i++){ //run through user prompt vector, including current index
+                std::vector<dual> *prev_prompt_crypt = nullptr; //store crypt of each prompt entry
                 switch(lang) {
-                case 0: prompt_crypt = &line.en_audio_path; break;
-                case 1: prompt_crypt= &line.jp_audio_path; break;
+                case 0: prev_prompt_crypt = &prompt[i].en_audio_path; break;
+                case 1: prev_prompt_crypt= &prompt[i].jp_audio_path; break;
                 }
 
-                //run trough crypt of prev prompt (up to including crypt of current prompt)
-                for(size_t itr = 0; itr < prompt_crypt->size(); itr++){
-                    for(dual &entry : *current_crypt){
-                        if(line.word_id == prompt[i].word_id && entry.first != (*prompt_crypt)[itr].first && entry.meaning <= (*prompt_crypt)[itr].meaning){ //if word id matches and path does not
-                            entry.meaning = ++(*prompt_crypt)[itr].meaning;
+                for(dual &entry : *current_crypt){ //run through current user entry
+                    for(size_t itr = 0; itr < prev_prompt_crypt->size(); itr++){//run trough crypt of prev prompt user entries
+                        if(line.word_id == prompt[i].word_id && entry.first != (*prev_prompt_crypt)[itr].first && entry.meaning <= (*prev_prompt_crypt)[itr].meaning){ //if word id matches and path does not
+                            bool is_same = false;
+                            for(const dual &recheck: *current_crypt){
+                                if(entry.first == recheck.first){
+                                    is_same = true;
+                                }
+                            }
+
+                            if(!is_same){
+                                entry.meaning = (*prev_prompt_crypt)[itr].meaning+1;
+                            }
                         }
                     }
                 }
@@ -539,7 +554,7 @@ unsigned int SQLIndexer::choose_id() noexcept {
         if(!found_match){
             found_match = assign_word_id_from_table(english,0,i) | assign_word_id_from_table(romanji,1,i) | assign_word_id_from_table(japanese,2,i) | assign_word_id_from_table(full_japanese,3,i);
             if(found_match){ //assign meaning if match found in table
-                assign_mean_from_table(prompt[i]); //we will se, once we load it into table
+                assign_mean_from_table(prompt[i]); //we will see, once we load it into table
                 assign_audio_mean_from_table(prompt[i]);
             }
         }
