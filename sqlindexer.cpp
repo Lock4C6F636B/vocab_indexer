@@ -561,7 +561,15 @@ unsigned int SQLIndexer::choose_id() noexcept {
 
         if(!found_match){ //if word not found, assign new max_id
             prompt[i].word_id = max_id++;
-            //NOTE meanings should get intialized to first meaning 0 by constructing... no need to be explicit here
+            //all four base words (english, romanji, japanese, full_japanese) get initialized to 0 by default
+            //here it's better to just write down loop twice than use bytes for pointer
+            std::cout<<"got here "<<prompt[i][0]<<std::endl;
+            for(uint8_t itr = 1; itr < prompt[i].en_audio_path.size(); i++){ //english audio
+                prompt[i].en_audio_path[itr].meaning = prompt[i].en_audio_path[itr-1].meaning+1;
+            }
+            for(uint8_t itr = 1; itr < prompt[i].jp_audio_path.size(); i++){ //japanese audio
+                prompt[i].jp_audio_path[itr].meaning = prompt[i].jp_audio_path[itr-1].meaning+1;
+            }
         }
     }
 
@@ -649,13 +657,15 @@ bool SQLIndexer::write_SQL() {
         return false;
     };
 
-    auto is_redundant_audio = [this](const bool languageIndex, const size_t &currentIndex, const size_t &currentInnerIndex) -> bool { //for sound there is only 2, 0 - english 1 - japanese
+    auto is_redundant_audio = [this](const bool languageIndex, const size_t &currentIndex, const uint8_t &currentInnerIndex) -> bool { //for sound there is only 2, 0 - english 1 - japanese
         //check user prompt if word_id for audio hasn't already appeared before
-        switch(static_cast<uint8_t>(languageIndex)){ //determine if to check in english or japanese, doing both is needless
+        std::cout<<"prompt start "<<prompt[currentIndex].word_array[0]<<std::endl;
+        switch(languageIndex){ //determine if to check in english or japanese, doing both is needless
             case 0:
                 //search prompt until previous entry in audio vector of same user entry
                 for(size_t itr = 0; itr <= currentIndex; itr++) { //run through previous entries in prompt
-                    for(size_t i = 0; i < currentInnerIndex; i++){ //run through audio vectors in each prompt entry
+                    uint8_t end = (itr == currentIndex)? currentInnerIndex : prompt[itr].en_audio_path.size();
+                    for(size_t i = 0; i < end; i++){ //run through audio vectors in each prompt entry
                         if(prompt[currentIndex].en_audio_path[currentInnerIndex].first == prompt[itr].en_audio_path[i].first) {
                             return true;
                         }
@@ -665,7 +675,8 @@ bool SQLIndexer::write_SQL() {
             case 1:
                 //search prompt until previous entry in audio vector of same user entry
                 for(size_t itr = 0; itr <= currentIndex; itr++) { //run through previous entries in prompt
-                    for(size_t i = 0; i < currentInnerIndex; i++){ //run through audio vectors in each prompt entry
+                    uint8_t end = (itr == currentIndex)? currentInnerIndex : prompt[itr].jp_audio_path.size();
+                    for(size_t i = 0; i < end; i++){ //run through audio vectors in each prompt entry
                         if(prompt[currentIndex].jp_audio_path[currentInnerIndex].first == prompt[itr].jp_audio_path[i].first) {
                             return true;
                         }
@@ -674,6 +685,7 @@ bool SQLIndexer::write_SQL() {
                 break;
         }
 
+        std::cout<<"prompt passes "<<prompt[currentIndex].word_array[0]<<std::endl;
 
         //check audio database in sql... sort of
         switch(static_cast<uint8_t>(languageIndex)){
@@ -692,6 +704,7 @@ bool SQLIndexer::write_SQL() {
                 }
                 break;
             }
+            std::cout<<"table passes "<<prompt[currentIndex].word_array[0]<<std::endl;
 
             return false;
     };
